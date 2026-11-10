@@ -1,0 +1,12 @@
+name = "tempo-tempo"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# die Seite (index.html) liegt im Ordner public/
+[assets]
+directory = "./public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tempo-lb"
+database_id = "c387b373-af8d-4b5a-83e3-2e5515fcfc88"
