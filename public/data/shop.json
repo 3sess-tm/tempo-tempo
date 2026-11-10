@@ -89,6 +89,78 @@
         "ringText": "#4d4030", "ringSub": "#746044", "ringKonj": "#755032", "inner": "#98703d",
         "presentDisc": "#edf0e3", "perfectDisc": "#f5e9dd"
       }
+    },
+    {
+      "id": "mitternacht",
+      "name": "Mitternacht",
+      "description": "Tiefes Nachtblau mit warmem Messing.",
+      "price": 18,
+      "palette": {
+        "present": "#d3dcec", "perfect": "#e8d5e0", "presentInk": "#243a5e", "perfectInk": "#6e2f4e",
+        "paper": "#f0eedd", "rim": "#7a86a8", "ringEven": "#e2e4d6", "ringOdd": "#d4d8e2",
+        "ringText": "#232f4a", "ringSub": "#5a647e", "ringKonj": "#4a4a6e", "inner": "#2c3e6b",
+        "presentDisc": "#eef1f8", "perfectDisc": "#f7ecf1"
+      }
+    },
+    {
+      "id": "rosengarten",
+      "name": "Rosengarten",
+      "description": "Zartes Rosa und dunkles Blattgrün.",
+      "price": 14,
+      "palette": {
+        "present": "#e8d9d6", "perfect": "#f4d9c8", "presentInk": "#5a2e3d", "perfectInk": "#8a4a2d",
+        "paper": "#f9f1e6", "rim": "#b98a8d", "ringEven": "#f2e2d2", "ringOdd": "#ecd3cd",
+        "ringText": "#4a2b33", "ringSub": "#7d5c60", "ringKonj": "#8a4a5a", "inner": "#a03a5a",
+        "presentDisc": "#f6ecec", "perfectDisc": "#fbeee6"
+      }
+    },
+    {
+      "id": "zitronenfeld",
+      "name": "Zitronenfeld",
+      "description": "Warmgelb und sonniges Ocker.",
+      "price": 12,
+      "palette": {
+        "present": "#e9e4c0", "perfect": "#f0d9b8", "presentInk": "#5c5420", "perfectInk": "#7d4a1e",
+        "paper": "#f8f3e2", "rim": "#c4a83e", "ringEven": "#f0e9c0", "ringOdd": "#e6dda4",
+        "ringText": "#4a421c", "ringSub": "#7a6f3a", "ringKonj": "#8a6a1e", "inner": "#b98a1e",
+        "presentDisc": "#f7f5e2", "perfectDisc": "#f9efda"
+      }
+    },
+    {
+      "id": "lavendel",
+      "name": "Lavendel",
+      "description": "Kühles Violett mit silbrigem Rand.",
+      "price": 16,
+      "palette": {
+        "present": "#ddd8ec", "perfect": "#eed5d8", "presentInk": "#463a6b", "perfectInk": "#7d2f4d",
+        "paper": "#f4f0e8", "rim": "#9a8ab8", "ringEven": "#e9e3e8", "ringOdd": "#dcd4e6",
+        "ringText": "#372e52", "ringSub": "#6a5f8a", "ringKonj": "#6e4a7a", "inner": "#6a4a8a",
+        "presentDisc": "#f1eef8", "perfectDisc": "#f8ecef"
+      }
+    },
+    {
+      "id": "waldbeere",
+      "name": "Waldbeere",
+      "description": "Dunkle Beere und Moosgrün.",
+      "price": 20,
+      "palette": {
+        "present": "#d8e0c8", "perfect": "#e5c8d0", "presentInk": "#2f4a1e", "perfectInk": "#6e2440",
+        "paper": "#f2edda", "rim": "#6e7a4a", "ringEven": "#e8e6c2", "ringOdd": "#d8dcc0",
+        "ringText": "#2e3a22", "ringSub": "#5c6a48", "ringKonj": "#5a3a4a", "inner": "#5e2340",
+        "presentDisc": "#eff2e4", "perfectDisc": "#f6e8ec"
+      }
+    },
+    {
+      "id": "schiefer",
+      "name": "Schiefer",
+      "description": "Kühles Grau-Blau mit Rostorange als Kontrast.",
+      "price": 22,
+      "palette": {
+        "present": "#d3d9de", "perfect": "#f0d2b8", "presentInk": "#2c3a44", "perfectInk": "#7d3c1e",
+        "paper": "#efeee6", "rim": "#8a929a", "ringEven": "#e2e3da", "ringOdd": "#d2d5d6",
+        "ringText": "#26313a", "ringSub": "#5a656e", "ringKonj": "#5a4a3a", "inner": "#c45a1e",
+        "presentDisc": "#eef1f2", "perfectDisc": "#f8ecdf"
+      }
     }
   ]
 }
