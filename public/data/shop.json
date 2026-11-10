@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "wheels": [
+    {
+      "id": "forum",
+      "name": "Auf dem Forum",
+      "description": "Sprechen, handeln und den Alltag gestalten. 5 Verben der a-Konjugation.",
+      "price": 35,
+      "verbs": [
+        { "inf": "amāre", "pr": "amō", "pf": "amāvī", "dInf": "lieben", "dEr": "liebt", "dPt": "liebte", "dP2": "geliebt", "aux": "haben" },
+        { "inf": "portāre", "pr": "portō", "pf": "portāvī", "dInf": "tragen", "dEr": "trägt", "dPt": "trug", "dP2": "getragen", "aux": "haben" },
+        { "inf": "vocāre", "pr": "vocō", "pf": "vocāvī", "dInf": "rufen", "dEr": "ruft", "dPt": "rief", "dP2": "gerufen", "aux": "haben" },
+        { "inf": "ornāre", "pr": "ornō", "pf": "ornāvī", "dInf": "schmücken", "dEr": "schmückt", "dPt": "schmückte", "dP2": "geschmückt", "aux": "haben" },
+        { "inf": "numerāre", "pr": "numerō", "pf": "numerāvī", "dInf": "zählen", "dEr": "zählt", "dPt": "zählte", "dP2": "gezählt", "aux": "haben" }
+      ]
+    },
+    {
+      "id": "schola",
+      "name": "In der Schule",
+      "description": "Lernen, sehen und verstehen. 5 Verben der e-Konjugation.",
+      "price": 35,
+      "verbs": [
+        { "inf": "docēre", "pr": "doceō", "pf": "docuī", "dInf": "lehren", "dEr": "lehrt", "dPt": "lehrte", "dP2": "gelehrt", "aux": "haben" },
+        { "inf": "vidēre", "pr": "videō", "pf": "vīdī", "dInf": "sehen", "dEr": "sieht", "dPt": "sah", "dP2": "gesehen", "aux": "haben" },
+        { "inf": "habēre", "pr": "habeō", "pf": "habuī", "dInf": "haben", "dEr": "hat", "dPt": "hatte", "dP2": "gehabt", "aux": "haben" },
+        { "inf": "timēre", "pr": "timeō", "pf": "timuī", "dInf": "fürchten", "dEr": "fürchtet", "dPt": "fürchtete", "dP2": "gefürchtet", "aux": "haben" },
+        { "inf": "movēre", "pr": "moveō", "pf": "mōvī", "dInf": "bewegen", "dEr": "bewegt", "dPt": "bewegte", "dP2": "bewegt", "aux": "haben" }
+      ]
+    },
+    {
+      "id": "actiones",
+      "name": "Texte & Taten",
+      "description": "Lesen, schreiben und handeln. 5 Verben der konsonantischen Konjugation.",
+      "price": 35,
+      "verbs": [
+        { "inf": "legere", "pr": "legō", "pf": "lēgī", "dInf": "lesen", "dEr": "liest", "dPt": "las", "dP2": "gelesen", "aux": "haben" },
+        { "inf": "mittere", "pr": "mittō", "pf": "mīsī", "dInf": "schicken", "dEr": "schickt", "dPt": "schickte", "dP2": "geschickt", "aux": "haben" },
+        { "inf": "scrībere", "pr": "scrībō", "pf": "scrīpsī", "dInf": "schreiben", "dEr": "schreibt", "dPt": "schrieb", "dP2": "geschrieben", "aux": "haben" },
+        { "inf": "agere", "pr": "agō", "pf": "ēgī", "dInf": "handeln", "dEr": "handelt", "dPt": "handelte", "dP2": "gehandelt", "aux": "haben" },
+        { "inf": "dūcere", "pr": "dūcō", "pf": "dūxī", "dInf": "führen", "dEr": "führt", "dPt": "führte", "dP2": "geführt", "aux": "haben" }
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "id": "pergament",
+      "name": "Pergament",
+      "description": "Die klassische Optik.",
+      "price": 0,
+      "palette": {
+        "present": "#d9e4cc", "perfect": "#efd3c9", "presentInk": "#3d5a35", "perfectInk": "#7d3426",
+        "paper": "#f6efe1", "rim": "#c9b386", "ringEven": "#f1e4c3", "ringOdd": "#ecdcb5",
+        "ringText": "#3b2e22", "ringSub": "#7a6040", "ringKonj": "#8a5a2b", "inner": "#9e3f2e",
+        "presentDisc": "#eef2e5", "perfectDisc": "#f8ebe5"
+      }
+    },
+    {
+      "id": "mosaik",
+      "name": "Mosaik",
+      "description": "Kühle Grüntöne und Keramikrot.",
+      "price": 12,
+      "palette": {
+        "present": "#d4e4d8", "perfect": "#ead4d0", "presentInk": "#345846", "perfectInk": "#773c42",
+        "paper": "#f4eddd", "rim": "#7c9a7d", "ringEven": "#e5e3c9", "ringOdd": "#d6e2d2",
+        "ringText": "#29493e", "ringSub": "#52665a", "ringKonj": "#49625a", "inner": "#6b5361",
+        "presentDisc": "#edf2e8", "perfectDisc": "#f5e8e5"
+      }
+    },
+    {
+      "id": "meeresglas",
+      "name": "Meeresglas",
+      "description": "Türkis, Salbei und warmes Gold.",
+      "price": 16,
+      "palette": {
+        "present": "#d1e4e6", "perfect": "#f1dfc2", "presentInk": "#275963", "perfectInk": "#784338",
+        "paper": "#f7f0e2", "rim": "#8ba9aa", "ringEven": "#d9e8e5", "ringOdd": "#c9dddc",
+        "ringText": "#28464d", "ringSub": "#526d6f", "ringKonj": "#5d6754", "inner": "#4d7880",
+        "presentDisc": "#edf4f2", "perfectDisc": "#f8eee0"
+      }
+    },
+    {
+      "id": "bronze",
+      "name": "Bronze",
+      "description": "Gedämpfte Patina mit warmem Metallrand.",
+      "price": 20,
+      "palette": {
+        "present": "#dce2d2", "perfect": "#ecd5c5", "presentInk": "#475b39", "perfectInk": "#7d422d",
+        "paper": "#f1e8d2", "rim": "#b18a52", "ringEven": "#e4d3ae", "ringOdd": "#d6c39b",
+        "ringText": "#4d4030", "ringSub": "#746044", "ringKonj": "#755032", "inner": "#98703d",
+        "presentDisc": "#edf0e3", "perfectDisc": "#f5e9dd"
+      }
+    }
+  ]
+}

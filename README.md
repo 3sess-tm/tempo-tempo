@@ -42,6 +42,7 @@ npx wrangler d1 create tempo-lb
 - `public/index.html`: HTML-Grundgerüst
 - `public/app.css`: Stylesheet
 - `public/app.js`: Spiel-Logik
-- `public/data/wheels.json`: Rad-Katalog mit Preis- und Datensatzfeldern
+- `public/data/wheels.json`: Daten des kostenlosen Grundrads
+- `public/data/shop.json`: kaufbare Radpakete und Skin-Paletten
 
-Der Katalog enthält momentan das kostenlose Grundrad. Die Datenstruktur ist für weitere Räder vorbereitet; ein Shop zum Kaufen und Wechseln von Rädern ist noch nicht enthalten. Die Münzen werden derzeit im Browser gespeichert und für Übungserfolge vergeben.
+Der Shop bietet drei zusätzliche Verb-Räder und drei kaufbare Skins. Guthaben, Käufe und Ausrüstung werden lokal im Browser gespeichert und sind nicht zwischen Geräten synchronisiert. Ausgaben senken nur das verfügbare Guthaben; die Rangliste zählt weiterhin alle verdienten Asse.

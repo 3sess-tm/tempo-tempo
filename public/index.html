@@ -32,6 +32,7 @@
         <button class="tab on" data-tab="t1" role="tab">Deutsch → Latein</button>
         <button class="tab" data-tab="t2" role="tab">Form bestimmen</button>
         <button class="tab" data-tab="t4" role="tab" id="tab4" hidden>Meine Verben</button>
+        <button class="tab" data-tab="shop" role="tab">Shop</button>
         <button class="tab" data-tab="t5" role="tab">Rangliste</button>
         <button class="tab" data-tab="t3" role="tab">Hilfe</button>
       </div>
@@ -81,6 +82,17 @@
           <div class="row"><button type="button" id="copyCode" class="sec small">Code kopieren</button><button type="button" id="loadCode" class="sec small">Laden</button></div>
         </details>
       </section>
+      <section id="shop" class="tp">
+        <div class="shop-head">
+          <div><b>Dein Guthaben</b><div id="shopBalance" class="hint mini" aria-live="polite"></div></div>
+          <span class="hint mini">Käufe bleiben in diesem Browser gespeichert.</span>
+        </div>
+        <h3>Räder</h3>
+        <div id="wheelShop" class="shop-grid"></div>
+        <h3>Skins</h3>
+        <div id="skinShop" class="shop-grid"></div>
+        <div id="shopMessage" class="hint mini" role="status" aria-live="polite"></div>
+      </section>
       <section id="t5" class="tp">
         <div class="hint mini">Spiele mit einem <b>Spitznamen</b> (kein echter Name!) und dem Klassencode deiner Lehrkraft. Gezählt werden alle verdienten Asse.</div>
         <div class="inrow"><input id="lbName" class="txt" maxlength="16" placeholder="Spitzname" autocomplete="off"><input id="lbBoard" class="txt" maxlength="24" placeholder="Klassencode" autocomplete="off"></div>
@@ -91,7 +103,7 @@
       <section id="t3" class="tp hint">
         <button type="button" class="sec small introbtn" id="introagain">✦ Einführung nochmal zeigen</button>
         <p>Das Fenster bleibt oben auf 12 Uhr. <b>Mittleren Ring</b> drehen = Verb wählen, <b>äußeren Ring</b> drehen = Tempus wählen. Eine Form im Fenster antippen zeigt die Übersetzung.</p>
-        <p>Vorlesen: Beim Aufdecken wird genau die angetippte Form gesprochen, bei „Lösung zeigen“ die Lösung. Vorlesen ist zu Beginn aus und spricht nur, wenn oben „weiblich“ oder „männlich“ gewählt ist; dann wiederholt 🔊 eine Form. Aussprache klassisch: c wie k, v wie w.</p><p>Die Formen im Fenster sind verdeckt – erst überlegen, dann Zeile antippen zum Aufdecken. Nochmal antippen verdeckt sie wieder. Darunter: „alle aufdecken“ und „alle verdecken“.</p><p>Münzen: aus dem Kopf mit allen Längen getippt 4 Asse · ohne Längen oder nach dem Aufdecken 2 Asse · auf der Scheibe die richtige Zeile gleich beim ersten Mal angetippt 2 Asse, nach Probieren 1 As · Form bestimmt 2 Asse · nach „Lösung zeigen“ keine Münze. Du hast 3 Versuche mit Hinweisen; ist auch der 4. falsch, kommt die Lösung und pro Fehlversuch wird 1 As abgezogen (also 4 Asse).</p>
+        <p>Vorlesen: Beim Aufdecken wird genau die angetippte Form gesprochen, bei „Lösung zeigen“ die Lösung. Vorlesen ist zu Beginn aus und spricht nur, wenn oben „weiblich“ oder „männlich“ gewählt ist; dann wiederholt 🔊 eine Form. Aussprache klassisch: c wie k, v wie w.</p><p>Die Formen im Fenster sind verdeckt – erst überlegen, dann Zeile antippen zum Aufdecken. Nochmal antippen verdeckt sie wieder. Darunter: „alle aufdecken“ und „alle verdecken“.</p><p>Münzen: aus dem Kopf mit allen Längen getippt 4 Asse · ohne Längen oder nach dem Aufdecken 2 Asse · auf der Scheibe die richtige Zeile gleich beim ersten Mal angetippt 2 Asse, nach Probieren 1 As · Form bestimmt 2 Asse · nach „Lösung zeigen“ keine Münze. Du hast 3 Versuche mit Hinweisen; ist auch der 4. falsch, kommt die Lösung und pro Fehlversuch wird 1 As abgezogen (also 4 Asse). Im <b>Shop</b> kannst du weitere Räder und Skins mit Assen kaufen. Käufe bleiben in diesem Browser gespeichert; die Rangliste zählt weiterhin alle verdienten Asse.</p>
         <div class="vbox"><b>Stimme wählen</b>
           <div class="row" style="align-items:center"><select id="vlist"></select><button type="button" id="vtest" class="sec small" style="margin-top:0">angetippte Form anhören</button></div>
           <div class="row" style="align-items:center;margin-top:6px"><span class="hint">Klang:</span><button type="button" class="sec small kbtn" data-k="heiter" style="margin-top:0">heiter &amp; jung</button><button type="button" class="sec small kbtn" data-k="ruhig" style="margin-top:0">ruhig</button></div>

@@ -1,8 +1,33 @@
 fetch("/data/wheels.json").then(response => {
   if (!response.ok) throw new Error("Wheel catalog could not be loaded");
   return response.json();
-}).then(wheelCatalog => {
-const D = wheelCatalog.wheels[0].data;
+}).then(wheelCatalog => fetch("/data/shop.json").then(response => {
+  if (!response.ok) throw new Error("Shop catalog could not be loaded");
+  return response.json();
+}).then(shopCatalog => {
+wheelCatalog.wheels.push(...shopCatalog.wheels);
+wheelCatalog.skins = shopCatalog.skins;
+const BASE_D = wheelCatalog.wheels.find(item=>item.id==='starter').data;
+let D = BASE_D;
+const SHOP_KEY = 'tempo-shop-stand-v1';
+const wheelIds = new Set(wheelCatalog.wheels.map(item=>item.id));
+const skinIds = new Set(wheelCatalog.skins.map(item=>item.id));
+function readShopState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(SHOP_KEY)||'{}');
+    const ownedWheels = [...new Set((Array.isArray(saved.ownedWheels)?saved.ownedWheels:[]).filter(id=>wheelIds.has(id)))];
+    const ownedSkins = [...new Set((Array.isArray(saved.ownedSkins)?saved.ownedSkins:[]).filter(id=>skinIds.has(id)))];
+    if (!ownedWheels.includes('starter')) ownedWheels.push('starter');
+    if (!ownedSkins.includes('pergament')) ownedSkins.push('pergament');
+    return {ownedWheels, ownedSkins,
+      activeWheel: ownedWheels.includes(saved.activeWheel)?saved.activeWheel:'starter',
+      activeSkin: ownedSkins.includes(saved.activeSkin)?saved.activeSkin:'pergament'};
+  }catch(e){ return {ownedWheels:['starter'],ownedSkins:['pergament'],activeWheel:'starter',activeSkin:'pergament'}; }
+}
+let shopState = readShopState();
+let palette = wheelCatalog.skins.find(item=>item.id===shopState.activeSkin).palette;
+let activeWheelId = 'starter';
+function saveShopState(){ try{ localStorage.setItem(SHOP_KEY,JSON.stringify(shopState)); }catch(e){} }
 let NV = D.verbs.length, VS = 360/NV;   // Anzahl Verben, Winkel pro Verb (bei eigenen Verben veränderlich)
 const R_OUT=99, R_AB=78, R_BC=57;           // breite Griffringe (viewBox-Einheiten)
 const wheel = document.getElementById('wheel');
@@ -23,7 +48,7 @@ function arcText(g,txt,r,ang,span,cls,ring,cap=4.4,rflip=null){
   };
   const a=mk(false), b=mk(true); b.style.display='none';
   FLIP.push({a,b,ang,ring});
-  return {setAttribute:(k,v)=>{a.setAttribute(k,v);b.setAttribute(k,v);}};
+  return {setAttribute:(k,v)=>{a.setAttribute(k,v);b.setAttribute(k,v);a.style.setProperty(k,v);b.style.setProperty(k,v);}};
 }
 function updateFlip(){
   for (const f of FLIP){
@@ -33,21 +58,22 @@ function updateFlip(){
 }
 function buildWheel(){
   const gA=document.getElementById('gA'), gB=document.getElementById('gB'), gC=document.getElementById('gC'), gF=document.getElementById('gFix');
+  gA.innerHTML=''; gB.innerHTML=''; gC.innerHTML=''; gF.innerHTML=''; FLIP.length=0;
   // Ring A: Tempora – Präsensstamm sanft grün, Perfektstamm sanft rot
   D.tenses.forEach((name,t)=>{
     const th=60*t, g=t<3;
-    el('path',{d:sector(R_AB,R_OUT,th-30,th+30),fill:g?'#d9e4cc':'#efd3c9'},gA);
-    el('path',{d:sector(R_AB,R_OUT,th+29.7,th+30.3),fill:'#f6efe1'},gA);
-    arcText(gA,name,87.2,th,40,'lblA','A').setAttribute('fill',g?'#3d5a35':'#7d3426');
-    el('path',{d:`M${P(R_AB,th)}L${P(R_AB+4.2,th-2.6)}L${P(R_AB+4.2,th+2.6)}Z`,fill:g?'#3d5a35':'#7d3426'},gA);
+    el('path',{d:sector(R_AB,R_OUT,th-30,th+30),fill:g?palette.present:palette.perfect},gA);
+    el('path',{d:sector(R_AB,R_OUT,th+29.7,th+30.3),fill:palette.paper},gA);
+    arcText(gA,name,87.2,th,40,'lblA','A').setAttribute('fill',g?palette.presentInk:palette.perfectInk);
+    el('path',{d:`M${P(R_AB,th)}L${P(R_AB+4.2,th-2.6)}L${P(R_AB+4.2,th+2.6)}Z`,fill:g?palette.presentInk:palette.perfectInk},gA);
   });
-  el('circle',{r:R_OUT,fill:'none',stroke:'#c9b386','stroke-width':0.6},gA);
+  el('circle',{r:R_OUT,fill:'none',stroke:palette.rim,'stroke-width':0.6},gA);
   buildRingB();
   // innere Scheibe (fest), Farbton folgt dem Stamm
-  el('circle',{id:'cdisc',r:R_BC,fill:'#f6efe1'},gC);
-  el('circle',{r:R_BC-1.6,fill:'none',stroke:'#9e3f2e','stroke-width':0.7,opacity:.55},gC);
+  el('circle',{id:'cdisc',r:R_BC,fill:palette.paper},gC);
+  el('circle',{r:R_BC-1.6,fill:'none',stroke:palette.inner,'stroke-width':0.7,opacity:.55},gC);
   // fester Zeiger auf 12 Uhr
-  el('path',{d:`M0,${-R_BC-0.2}L-3.6,${-R_BC+5.4}L3.6,${-R_BC+5.4}Z`,fill:'#9e3f2e'},gF);
+  el('path',{d:`M0,${-R_BC-0.2}L-3.6,${-R_BC+5.4}L3.6,${-R_BC+5.4}Z`,fill:palette.inner},gF);
 }
 function buildRingB(){
   const gB=document.getElementById('gB');
@@ -55,14 +81,14 @@ function buildRingB(){
   NV = D.verbs.length; VS = 360/Math.max(NV,1);
   D.verbs.forEach((vb,v)=>{
     const th=VS*v, name=vb.split(' ')[0], de=vb.split('(')[1].replace(')','');
-    const fillB = v%2?'#ecdcb5':'#f1e4c3';
+    const fillB = v%2?palette.ringOdd:palette.ringEven;
     if (VS>=180){ el('path',{d:sector(R_BC,R_AB,th-VS/2,th),fill:fillB},gB); el('path',{d:sector(R_BC,R_AB,th,th+VS/2),fill:fillB},gB); }
     else el('path',{d:sector(R_BC,R_AB,th-VS/2,th+VS/2),fill:fillB},gB);
-    el('path',{d:sector(R_BC,R_AB,th+VS/2-0.3,th+VS/2+0.3),fill:'#f6efe1'},gB);
-    arcText(gB,name,70.0,th,Math.min(VS*0.62,80),'lblB','B',4.3,64.0);
-    arcText(gB,de,64.4,th,Math.min(VS*0.62,80),'lblB2','B',3.3,68.6);
-    arcText(gB,D.konj[v],59.4,th,Math.min(VS*0.62,80),'lblB3','B',2.8,72.8);
-    el('path',{d:`M${P(R_AB,th)}L${P(R_AB-2.8,th-2.4)}L${P(R_AB-2.8,th+2.4)}Z`,fill:'#5a4630'},gB);
+    el('path',{d:sector(R_BC,R_AB,th+VS/2-0.3,th+VS/2+0.3),fill:palette.paper},gB);
+    arcText(gB,name,70.0,th,Math.min(VS*0.62,80),'lblB','B',4.3,64.0).setAttribute('fill',palette.ringText);
+    arcText(gB,de,64.4,th,Math.min(VS*0.62,80),'lblB2','B',3.3,68.6).setAttribute('fill',palette.ringSub);
+    arcText(gB,D.konj[v],59.4,th,Math.min(VS*0.62,80),'lblB3','B',2.8,72.8).setAttribute('fill',palette.ringKonj);
+    el('path',{d:`M${P(R_AB,th)}L${P(R_AB-2.8,th-2.4)}L${P(R_AB-2.8,th+2.4)}Z`,fill:palette.ringText},gB);
   });
 }
 buildWheel();
@@ -108,7 +134,7 @@ function readout(){
   const mn = t===2 && mnem(v);
   document.getElementById('whead').innerHTML = `${D.verbs[v].split(' ')[0]} · <span class="t ${tc}">${D.tenses[t]}</span>` +
      (mn ? `<div class="mnem"><span class="mico">${mn.ico}</span> ${mn.short}</div>` : '') + (t>=3 ? pfLine(v) : '');
-  const cd = document.getElementById('cdisc'); if (cd) cd.setAttribute('fill', t<3 ? '#eef2e5' : '#f8ebe5');
+  const cd = document.getElementById('cdisc'); if (cd) cd.setAttribute('fill', t<3 ? palette.presentDisc : palette.perfectDisc);
   const key = v+'-'+t;
   if (key !== shownKey){ shownKey = key; revealed.clear(); sel = -1; if (rightRow && rightRow[1]===v && rightRow[2]===t){ revealed.add(rightRow[3]); sel = rightRow[3]; } }
   document.getElementById('wtab').innerHTML = D.forms.filter(f=>f[1]===v && f[2]===t)
@@ -220,6 +246,8 @@ function renderPurse(){
   document.getElementById('purse').innerHTML = COINS.map(c=>
     `<div class="slot">${coinSVG(c)}<div><b>${s[c.k]}</b> ${s[c.k]===1?c.name:c.pl}</div></div>`).join('');
   document.getElementById('ptotal').textContent = `Gesamtwert: ${purse} ${purse===1?'As':'Asse'}`;
+  document.getElementById('shopBalance').textContent = `${purse} ${purse===1?'As':'Asse'} verfügbar`;
+  renderShop();
 }
 function penalty(asse, why){          // Abzug bei Lösung nach 4 Fehlversuchen: 1 As pro Fehlversuch
   const lost = Math.min(asse, purse);
@@ -482,6 +510,7 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tp').forEach(x=>x.classList.toggle('on',x.id===b.dataset.tab));
   document.body.classList.toggle('editing', b.dataset.tab==='t4');
   if (b.dataset.tab==='t5') lbLoad();
+  if (b.dataset.tab==='shop') renderShop();
 });
 function isTyping(){ const a=document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type!=='checkbox'; }
 function layout(){
@@ -1043,9 +1072,80 @@ lbEl('lbSave').onclick = ()=>{
   if (!/^[a-z0-9_-]{1,24}$/.test(b)){ lbStatus('Klassencode: nur Buchstaben, Zahlen, - und _ (ohne Leerzeichen).'); return; }
   lbCfg.name=n; lbCfg.board=b; lbSaveCfg(); lbPending=true; lbLoad();
 };
+function priceText(price){ return `${price} ${price===1?'As':'Asse'}`; }
+function renderShop(){
+  const wheelGrid = document.getElementById('wheelShop');
+  if (!wheelGrid) return;
+  wheelGrid.innerHTML = wheelCatalog.wheels.map(item=>{
+    const owned = shopState.ownedWheels.includes(item.id), active = activeWheelId===item.id;
+    const action = active?'Ausgerüstet':owned?'Ausrüsten':`Kaufen · ${priceText(item.price)}`;
+    return `<article class="shop-item">
+      <div class="shop-item-head"><div class="shop-wheel-preview" style="--shop-present:${palette.present};--shop-perfect:${palette.perfect};--shop-rim:${palette.rim};--shop-paper:${palette.paper}" aria-hidden="true"></div>
+        <div><h4>${item.name}</h4><p>${item.description}</p></div></div>
+      <div class="shop-item-foot"><span class="shop-price">${owned?(active?'Aktiv':'Im Besitz'):priceText(item.price)}</span>
+        <button type="button" class="sec small" data-shop-wheel="${item.id}" ${active?'disabled':''}>${action}</button></div>
+    </article>`;
+  }).join('');
+  document.getElementById('skinShop').innerHTML = wheelCatalog.skins.map(item=>{
+    const owned = shopState.ownedSkins.includes(item.id), active = shopState.activeSkin===item.id;
+    const action = active?'Ausgerüstet':owned?'Ausrüsten':`Kaufen · ${priceText(item.price)}`;
+    const p = item.palette;
+    return `<article class="shop-item">
+      <div class="shop-item-head"><div class="shop-skin-preview" aria-hidden="true"><i style="background:${p.present}"></i><i style="background:${p.perfect}"></i><i style="background:${p.ringEven}"></i></div>
+        <div><h4>${item.name}</h4><p>${item.description}</p></div></div>
+      <div class="shop-item-foot"><span class="shop-price">${owned?(active?'Aktiv':'Im Besitz'):priceText(item.price)}</span>
+        <button type="button" class="sec small" data-shop-skin="${item.id}" ${active?'disabled':''}>${action}</button></div>
+    </article>`;
+  }).join('');
+}
+function activateWheel(id, persist=true){
+  const item = wheelCatalog.wheels.find(entry=>entry.id===id);
+  if (!item || !shopState.ownedWheels.includes(id)) return;
+  D = item.data || {...BASE_D};
+  if (!item.data) applyVerbs(item.verbs);
+  activeWheelId = item.id;
+  shopState.activeWheel = item.id;
+  if (persist) saveShopState();
+  NV = D.verbs.length; VS = 360/NV;
+  buildWheel(); rot = {A:0,B:0}; rightRow=null; revealed.clear(); shownKey=''; sel=-1;
+  buildTF(); renderStats(); dnew(false); document.getElementById('qnew').click(); render(); renderShop();
+}
+function activateSkin(id){
+  const item = wheelCatalog.skins.find(entry=>entry.id===id);
+  if (!item || !shopState.ownedSkins.includes(id)) return;
+  palette = item.palette; shopState.activeSkin = item.id; saveShopState();
+  buildWheel(); render(); renderShop();
+}
+function handleShopClick(event, kind){
+  const button = event.target.closest(`[data-shop-${kind}]`);
+  if (!button) return;
+  const id = button.dataset[`shop${kind[0].toUpperCase()}${kind.slice(1)}`];
+  const list = kind==='wheel'?wheelCatalog.wheels:wheelCatalog.skins;
+  const ownedKey = kind==='wheel'?'ownedWheels':'ownedSkins';
+  const activeKey = kind==='wheel'?'activeWheel':'activeSkin';
+  const item = list.find(entry=>entry.id===id);
+  if (!item) return;
+  if (shopState[ownedKey].includes(id)){
+    if (shopState[activeKey]===id) return;
+    if (kind==='wheel') activateWheel(id); else activateSkin(id);
+    document.getElementById('shopMessage').textContent = `${item.name} ist jetzt ausgerüstet.`;
+    return;
+  }
+  if (purse<item.price){
+    document.getElementById('shopMessage').textContent = `Dafür fehlen noch ${priceText(item.price-purse)}.`;
+    return;
+  }
+  purse -= item.price;
+  shopState[ownedKey].push(id);
+  try { localStorage.setItem('drehscheibe-asse',purse); } catch(e){}
+  saveShopState(); renderPurse();
+  document.getElementById('shopMessage').textContent = `${item.name} freigeschaltet.`;
+}
+document.getElementById('wheelShop').addEventListener('click',event=>handleShopClick(event,'wheel'));
+document.getElementById('skinShop').addEventListener('click',event=>handleShopClick(event,'skin'));
 buildTF(); renderStats();
 renderPurse();
-dnew(false);
-render();
+if (shopState.activeWheel!=='starter') activateWheel(shopState.activeWheel,false);
+else { dnew(false); document.getElementById('qnew').click(); render(); }
 
-});
+}));
