@@ -368,3 +368,73 @@
      #shop .shop-head{align-items:flex-start;flex-direction:column;gap:4px}
      #shop .shop-head>span{text-align:left;max-width:none}
 }
+
+/* ---------- Kleine Displays: kompakte Scheibe, erreichbare Navigation ---------- */
+.wheel-toggle{display:none}
+@media(max-width:639px), (max-height:559px){
+  body.small main{gap:8px;padding:8px 8px 20px}
+  body.small .wheel-toggle{
+    display:block;position:sticky;top:0;z-index:7;width:100%;min-height:44px;
+    box-shadow:0 2px 6px rgba(50,35,20,.14)
+  }
+  body.small #wheel{max-width:100%;margin-inline:auto}
+  body.small.wheel-collapsed #wheel{display:none}
+  body.small .panel{width:min(100%,760px);margin-inline:auto}
+  body.small .panel .ex{overflow:visible}
+  body.small .tabs{
+    position:sticky;top:48px;z-index:6;flex-wrap:nowrap;overflow-x:auto;
+    margin:0 -10px 10px;padding:0 10px 8px;background:var(--plaster);
+    scrollbar-width:thin
+  }
+  body.small .tabs .tab{flex:0 0 auto;min-height:42px}
+  body.small .row button{min-height:42px}
+  body.small #wtab{border-spacing:0 calc(var(--u)*var(--k,1)*.65)}
+  body.small #wtab td{padding-inline:calc(var(--u)*var(--k,1)*1.2)}
+}
+
+/* ---------- Automatischer Dunkelmodus ---------- */
+@media(prefers-color-scheme:dark){
+  :root{
+    color-scheme:dark;
+    --ink:#f0e7d8;--muted:#c0ae94;--plaster:#302a23;--bg:#211d19;--line:#594b39;
+    --gtxt:#a9c49b;--gbg:#3a4934;--rtxt:#e5a292;--rbg:#51352e;
+    --blue:#a8c8ed;--bluebg:#2b3d50;--yel:#f1d778;--yelbg:#50451e
+  }
+  header{background:#29231d}
+  .card,.shop-item{background:var(--plaster)}
+  button.sec,.tab{background:#443a2d;color:var(--ink)}
+  .tab.on{background:#5b4938;color:var(--ink)}
+  .lbl li{background:#29231d}
+  .lbl li.me{background:#51432b}
+  .txt,#din,#vlist,input,textarea,select{background-color:#28231d!important;color:var(--ink)!important;-webkit-text-fill-color:var(--ink)}
+  input::placeholder,textarea::placeholder{color:#b4a184!important;-webkit-text-fill-color:#b4a184}
+  #vlist{border-color:var(--line)}
+  .vbtn.on,.kbtn.on{background:#51432b!important;color:var(--ink)!important}
+  .shop-skin-preview{background:#302a23}
+  .icard{background:linear-gradient(90deg,#332a1e,#302a23 8%,#302a23 92%,#332a1e)}
+  .cover{color:#d0bea1;background:repeating-linear-gradient(135deg,#4a4031 0 6px,#403728 6px 12px)}
+  #wtab tr:hover .cover{background:#5b4c37;color:#f0e7d8}
+  .k-B{color:#a5c691}
+  .k-P{background:#54372f;color:#f0b5a4}
+}
+
+/* ---------- Druckansicht: nur der aktive Bereich, ohne Bedienelemente ---------- */
+@media print{
+  @page{margin:14mm}
+  :root{color-scheme:light}
+  html,body{height:auto;max-width:none;overflow:visible;background:#fff!important;color:#111!important}
+  header{display:block;padding:0 0 8px;background:#fff;border-bottom:2px solid #444}
+  header h1{font-size:18pt;color:#111}
+  header h1 small{color:#444}
+  .tools,#readout,#wheel,#wheelToggle,.tabs,#intro,#toast,button{display:none!important}
+  main{display:block!important;height:auto!important;padding:0!important}
+  .panel{display:block!important;width:100%!important;height:auto!important}
+  .card{break-inside:avoid;background:#fff!important;border:1px solid #bbb;box-shadow:none;padding:10px;margin:10px 0}
+  .tp{display:none!important}
+  .tp.on{display:block!important}
+  .hint,.shop-item p,.shop-price{color:#444!important}
+  .lbl li,.shop-item{background:#fff!important;border:1px solid #ccc}
+  .lbl li.me{font-weight:700}
+  input,textarea,select{border:1px solid #999!important;background:#fff!important;color:#111!important;-webkit-text-fill-color:#111}
+  a{color:#111;text-decoration:none}
+}

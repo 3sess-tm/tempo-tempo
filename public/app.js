@@ -521,7 +521,7 @@ function layout(){
   body.classList.remove('fit','land','port','small');
   let size;
   if (W < 640 || H < 560){
-    body.classList.add('small'); size = Math.min(W - 24, 640);
+    body.classList.add('small'); size = Math.min(W - 24, 440, Math.max(280, H * 0.48));
   } else if (W/H > 1.05){
     body.classList.add('fit','land');
     const side = Math.max(330, Math.min(440, W*0.36));
@@ -534,10 +534,24 @@ function layout(){
     body.style.setProperty('--ph', ph+'px');
     body.style.setProperty('--ww', Math.min(W-28, 900)+'px');
   }
+  if (!body.classList.contains('small')) body.classList.remove('wheel-collapsed');
+  updateWheelToggle();
   wheel.style.width = size+'px';
   wheel.style.setProperty('--u', size/100+'px');
   if (typeof fitWin==='function') fitWin();
 }
+const wheelToggle = document.getElementById('wheelToggle');
+function updateWheelToggle(){
+  const expanded = !document.body.classList.contains('wheel-collapsed');
+  wheelToggle.setAttribute('aria-expanded', String(expanded));
+  wheelToggle.textContent = expanded ? 'Scheibe einklappen' : 'Scheibe anzeigen';
+}
+wheelToggle.addEventListener('click', ()=>{
+  document.body.classList.toggle('wheel-collapsed');
+  updateWheelToggle();
+  (document.body.classList.contains('wheel-collapsed') ? document.getElementById('panel') : wheel)
+    .scrollIntoView({behavior:'smooth', block:'start'});
+});
 window.addEventListener('resize', layout);
 // ---------- Tastatur: Eingabefeld immer sichtbar halten ----------
 let kbShift = 0;
@@ -1033,7 +1047,11 @@ var LB_API = '/api/lb';        // gleiche Domain wie die Seite; nur dort erreich
 var lbCfg = {name:'', board:'', id:''}, lbTimer = null, lbPending = false;
 try{ Object.assign(lbCfg, JSON.parse(localStorage.getItem('drehscheibe-rangliste')||'{}')); }catch(e){}
 function lbSaveCfg(){ try{ localStorage.setItem('drehscheibe-rangliste', JSON.stringify(lbCfg)); }catch(e){} }
-if (!lbCfg.id){ try{ lbCfg.id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b=>b.toString(16).padStart(2,'0')).join(''); }catch(e){ lbCfg.id = String(Math.random()).slice(2)+Date.now(); } lbSaveCfg(); }
+function newLbId(){
+  try{ return Array.from(crypto.getRandomValues(new Uint8Array(12)), b=>b.toString(16).padStart(2,'0')).join(''); }
+  catch(e){ return String(Math.random()).slice(2)+Date.now(); }
+}
+if (!lbCfg.id){ lbCfg.id = newLbId(); lbSaveCfg(); }
 const lbEl = id=>document.getElementById(id);
 function lbStatus(m){ lbEl('lbStatus').textContent = m||''; }
 async function lbCall(opts, qs=''){
@@ -1043,10 +1061,10 @@ async function lbCall(opts, qs=''){
 }
 function lbDirty(){ if (!lbCfg.name || !lbCfg.board) return; lbPending=true; if (!lbTimer) lbTimer=setTimeout(lbFlush, 30000); }
 async function lbFlush(){
-  clearTimeout(lbTimer); lbTimer=null; if (!lbPending || !lbCfg.name || !lbCfg.board) return; lbPending=false;
+  clearTimeout(lbTimer); lbTimer=null; if (!lbPending || !lbCfg.name || !lbCfg.board) return true; lbPending=false;
   try{ await lbCall({method:'POST', headers:{'Content-Type':'application/json'}, keepalive:true,
-        body:JSON.stringify({board:lbCfg.board, id:lbCfg.id, name:lbCfg.name, score:earned})}); }
-  catch(e){ lbPending=true; }
+        body:JSON.stringify({board:lbCfg.board, id:lbCfg.id, name:lbCfg.name, score:earned})}); return true; }
+  catch(e){ lbPending=true; return false; }
 }
 document.addEventListener('visibilitychange', ()=>{ if (document.hidden) lbFlush(); });
 function lbRender(rows, offline){
@@ -1057,20 +1075,46 @@ function lbRender(rows, offline){
     li.append(a,b,c); ol.append(li); });
   if (offline) lbStatus('Die gemeinsame Rangliste ist hier nicht erreichbar (nur auf der Cloudflare-Seite). Gezeigt wird nur dein eigener Stand.');
 }
-async function lbLoad(){
+async function lbLoad(message=''){
   if (lbEl('lbName') && document.activeElement!==lbEl('lbName')) lbEl('lbName').value = lbCfg.name;
   if (lbEl('lbBoard') && document.activeElement!==lbEl('lbBoard')) lbEl('lbBoard').value = lbCfg.board;
   if (!lbCfg.board){ lbRender([{name:lbCfg.name||'Du', score:earned}]); lbStatus('Spitzname und Klassencode eintragen, dann „Mitmachen“.'); return; }
   lbStatus('lädt …');
-  try{ await lbFlush(); const d=await lbCall({}, '?board='+encodeURIComponent(lbCfg.board)); lbRender(d.rows||[]); lbStatus((d.rows||[]).length?'':'Noch niemand dabei – du bist der Erste!'); }
+  try{ await lbFlush(); const d=await lbCall({}, '?board='+encodeURIComponent(lbCfg.board)); lbRender(d.rows||[]); lbStatus(message || ((d.rows||[]).length?'':'Noch niemand dabei – du bist der Erste!')); }
   catch(e){ lbRender([{name:lbCfg.name||'Du', score:earned}], true); }
 }
 lbEl('lbRefresh').onclick = lbLoad;
-lbEl('lbSave').onclick = ()=>{
+lbEl('lbSave').onclick = async ()=>{
   const n=lbEl('lbName').value.trim(), b=lbEl('lbBoard').value.trim().toLowerCase();
   if (n.length<2){ lbStatus('Der Spitzname braucht mindestens 2 Zeichen.'); return; }
   if (!/^[a-z0-9_-]{1,24}$/.test(b)){ lbStatus('Klassencode: nur Buchstaben, Zahlen, - und _ (ohne Leerzeichen).'); return; }
-  lbCfg.name=n; lbCfg.board=b; lbSaveCfg(); lbPending=true; lbLoad();
+  const button=lbEl('lbSave');
+  button.disabled=true;
+  lbStatus('Konto wird gesucht …');
+  try{
+    const result=await lbCall({}, '?board='+encodeURIComponent(b)+'&name='+encodeURIComponent(n));
+    clearTimeout(lbTimer); lbTimer=null; lbPending=false;
+    lbCfg.name=n; lbCfg.board=b;
+    if (result.account){
+      const score=Number(result.account.score);
+      if (!Number.isSafeInteger(score) || score<0) throw new Error('Ungültiger Kontostand.');
+      lbCfg.name=result.account.name;
+      lbCfg.id=result.account.id;
+      earned=score; purse=score;
+      try{ localStorage.setItem('drehscheibe-verdient', earned); localStorage.setItem('drehscheibe-asse', purse); }catch(e){}
+      renderPurse();
+      lbSaveCfg();
+      await lbLoad('Willkommen zurück! Dein Guthaben wurde aus deinem Konto geladen.');
+    }else{
+      lbCfg.id=newLbId();
+      lbSaveCfg();
+      lbPending=true;
+      if (!await lbFlush()) { lbStatus('Das Konto konnte nicht gespeichert werden. Bitte prüfe die Verbindung und versuche es erneut.'); return; }
+      await lbLoad('Konto angelegt – dein Guthaben wurde gespeichert.');
+    }
+  }catch(e){
+    lbStatus(e.message==='Ungültiger Kontostand.' ? e.message : 'Anmeldung nicht möglich. Bitte prüfe die Verbindung und versuche es erneut.');
+  }finally{ button.disabled=false; }
 };
 function priceText(price){ return `${price} ${price===1?'As':'Asse'}`; }
 function renderShop(){

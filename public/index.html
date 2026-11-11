@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -22,6 +22,7 @@
   </div>
 </header>
 <main id="main">
+  <button type="button" id="wheelToggle" class="sec wheel-toggle" aria-controls="wheel" aria-expanded="true">Scheibe einklappen</button>
   <div id="wheel" aria-label="Drehscheibe">
     <svg id="wsvg" viewBox="-100 -100 200 200" aria-hidden="true"><g id="gA"></g><g id="gB"></g><g id="gC"></g><g id="gFix"></g></svg>
     <div id="win"><div id="whead"></div><table id="wtab"></table><div id="wtr">Zeile antippen = Form aufdecken</div><div class="wbtns"><button id="wall" class="linkish" type="button">alle aufdecken</button><button id="wnone" class="linkish" type="button">alle verdecken</button></div><button id="wspeak" class="linkish" type="button">🔊 aufgedeckte vorlesen</button></div>
@@ -94,7 +95,7 @@
         <div id="shopMessage" class="hint mini" role="status" aria-live="polite"></div>
       </section>
       <section id="t5" class="tp">
-        <div class="hint mini">Spiele mit einem <b>Spitznamen</b> (kein echter Name!) und dem Klassencode deiner Lehrkraft. Gezählt werden alle verdienten Asse.</div>
+        <div class="hint mini">Spiele mit einem <b>Spitznamen</b> (kein echter Name!) und dem Klassencode deiner Lehrkraft. Mit „Mitmachen“ meldest du dich an oder legst ein Konto an; auf anderen Geräten genügt derselbe Spitzname mit Klassencode.</div>
         <div class="inrow"><input id="lbName" class="txt" maxlength="16" placeholder="Spitzname" autocomplete="off"><input id="lbBoard" class="txt" maxlength="24" placeholder="Klassencode" autocomplete="off"></div>
         <div class="row"><button type="button" id="lbSave">Mitmachen</button><button type="button" id="lbRefresh" class="sec">Aktualisieren</button></div>
         <div id="lbStatus" class="hint mini"></div>

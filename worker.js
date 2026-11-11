@@ -10,6 +10,15 @@ export default {
     if (req.method === 'GET') {
       const board = (url.searchParams.get('board') || '').toLowerCase();
       if (!/^[a-z0-9_-]{1,24}$/.test(board)) return json({ error: 'board' }, 400);
+      if (url.searchParams.has('name')) {
+        const name = String(url.searchParams.get('name') || '')
+          .replace(/[\u0000-\u001f<>&"]/g, '').trim().slice(0, 16);
+        if (name.length < 2) return json({ error: 'name' }, 400);
+        const account = await env.DB.prepare(
+          'SELECT id, name, score FROM scores WHERE board = ? AND lower(name) = lower(?) ORDER BY score DESC, updated DESC LIMIT 1'
+        ).bind(board, name).first();
+        return json({ account: account || null });
+      }
       const { results } = await env.DB
         .prepare('SELECT name, score FROM scores WHERE board = ? ORDER BY score DESC LIMIT 25')
         .bind(board).all();

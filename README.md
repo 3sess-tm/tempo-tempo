@@ -45,4 +45,6 @@ npx wrangler d1 create tempo-lb
 - `public/data/wheels.json`: Daten des kostenlosen Grundrads
 - `public/data/shop.json`: kaufbare Radpakete und Skin-Paletten
 
-Der Shop bietet drei zusätzliche Verb-Räder und drei kaufbare Skins. Guthaben, Käufe und Ausrüstung werden lokal im Browser gespeichert und sind nicht zwischen Geräten synchronisiert. Ausgaben senken nur das verfügbare Guthaben; die Rangliste zählt weiterhin alle verdienten Asse.
+Der Shop bietet drei zusätzliche Verb-Räder und drei kaufbare Skins. Käufe und Ausrüstung werden lokal im Browser gespeichert und sind nicht zwischen Geräten synchronisiert. Bei der Rangliste meldet „Mitmachen“ mit Klassencode und Spitzname am vorhandenen Konto an oder legt ein neues an. Bei einer erneuten Anmeldung wird das Asse-Guthaben mit dem gespeicherten Ranglistenstand synchronisiert; lokaler Shop-Besitz bleibt auf das jeweilige Gerät beschränkt. Ausgaben senken nur das verfügbare Guthaben; die Rangliste zählt weiterhin alle verdienten Asse.
+
+Das Layout passt sich kleinen Bildschirmen an: Die Drehscheibe lässt sich einklappen, und die Reiternavigation bleibt beim Scrollen erreichbar. Ein automatischer Dunkelmodus folgt der Systemeinstellung; beim Drucken werden Bedienelemente ausgeblendet und nur der gerade aktive Bereich ausgegeben.
