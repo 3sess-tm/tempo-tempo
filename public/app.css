@@ -59,7 +59,7 @@
   .coin.silver circle:first-child{fill:#c9ccd1}
   .coin.brass circle:first-child{fill:#d6b25e}
   .coin.copper circle:first-child{fill:#b8734a}
-  .rates{margin:6px 0 4px;font-weight:600;color:#444}
+  .rates{margin:6px 0 4px;font-weight:600;color:var(--muted)}
   button.small{padding:5px 10px;font-size:.8rem;margin-top:8px}
   #toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,40px);opacity:0;background:#1e7a3c;color:#fff;
          padding:10px 16px;border-radius:12px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);transition:all .3s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
@@ -157,7 +157,7 @@
   .tick{color:var(--gtxt);font-weight:700;margin-left:.3em}
   #wtr{font-family:Lexend,sans-serif;font-weight:300;font-style:normal;font-size:calc(var(--u)*var(--k,1)*2.5);color:var(--muted);margin-top:calc(var(--u)*var(--k,1)*1)}
   #wtr.on{color:var(--ink);font-weight:500}
-  .kj{font-size:.78em;font-weight:400;color:#8a5a2b}
+  .kj{font-size:.78em;font-weight:400;color:var(--muted)}
   #whead .kj{font-size:.82em;margin-top:.1em}
   #readout .kj{margin:0 .2em}
   #readout{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -404,6 +404,16 @@
   .card,.shop-item{background:var(--plaster)}
   button.sec,.tab{background:#443a2d;color:var(--ink)}
   .tab.on{background:#5b4938;color:var(--ink)}
+  #win{
+    color:#2e2620;--ink:#2e2620;--muted:#66533e;--gtxt:#3d5a35;--gbg:#d9e4cc;
+    --rtxt:#7d3426;--rbg:#efd3c9;--blue:#2d5078;--bluebg:#dbe6f1;--yel:#5a4500;--yelbg:#f6dc7a
+  }
+  #win .k-B{color:#5d7a4f}
+  #win .k-H{color:#79674b}
+  #win .k-P{background:#f0d2c8;color:#7d3426}
+  #wtab tr:hover td:last-child{background:rgba(201,160,80,.34)}
+  #wtab tr.sel td:last-child{background:rgba(158,63,46,.24)}
+  #wtab tr.right td:last-child{background:rgba(61,90,53,.28)}
   .lbl li{background:#29231d}
   .lbl li.me{background:#51432b}
   .txt,#din,#vlist,input,textarea,select{background-color:#28231d!important;color:var(--ink)!important;-webkit-text-fill-color:var(--ink)}
