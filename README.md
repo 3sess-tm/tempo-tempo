@@ -44,7 +44,10 @@ npx wrangler d1 create tempo-lb
 - `public/app.js`: Spiel-Logik
 - `public/data/wheels.json`: Daten des kostenlosen Grundrads
 - `public/data/shop.json`: kaufbare Radpakete und Skin-Paletten
+- `public/data/nouns.json`: Substantive mit vollständigen Kasus- und Numerusformen
 
 Der Shop bietet drei zusätzliche Verb-Räder und drei kaufbare Skins. Käufe und Ausrüstung werden lokal im Browser gespeichert und sind nicht zwischen Geräten synchronisiert. Bei der Rangliste meldet „Mitmachen“ mit Klassencode und Spitzname am vorhandenen Konto an oder legt ein neues an. Bei einer erneuten Anmeldung wird das Asse-Guthaben mit dem gespeicherten Ranglistenstand synchronisiert; lokaler Shop-Besitz bleibt auf das jeweilige Gerät beschränkt. Ausgaben senken nur das verfügbare Guthaben; die Rangliste zählt weiterhin alle verdienten Asse.
 
 Das Layout passt sich kleinen Bildschirmen an: Die Drehscheibe lässt sich einklappen, und die Reiternavigation bleibt beim Scrollen erreichbar. Ein automatischer Dunkelmodus folgt der Systemeinstellung; beim Drucken werden Bedienelemente ausgeblendet und nur der gerade aktive Bereich ausgegeben.
+
+Über die Wortart-Auswahl gibt es zwei Übungsarten für Substantive: deutsche Vorgaben ins Lateinische übertragen sowie eine lateinische Form nach Substantiv, Kasus und Numerus bestimmen. Das Substantivrad zeigt die fünf Deklinationsklassen mit ausgewählten Formen aller fünf Deklinationen; der Genitiv Singular und das Genus gehören jeweils zum Lemma. Die Formen sind im Katalog vollständig hinterlegt, damit auch Neutra, i-Stämme und besondere Vokativformen nicht durch pauschale Endungsregeln verfälscht werden.

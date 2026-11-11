@@ -438,3 +438,16 @@
   input,textarea,select{border:1px solid #999!important;background:#fff!important;color:#111!important;-webkit-text-fill-color:#111}
   a{color:#111;text-decoration:none}
 }
+
+/* ---------- Wortart-Wechsel für Verb- und Substantivübungen ---------- */
+.word-modes{display:flex;gap:6px;margin:0 0 8px;padding:4px;border:1px solid var(--line);border-radius:9px;width:max-content;max-width:100%}
+.word-mode{min-height:40px;padding:7px 14px;background:transparent;color:var(--muted)}
+.word-mode.on{background:var(--red);color:#fff}
+.noun-mode .word-mode.on{background:var(--gtxt);color:#fff}
+@media(prefers-color-scheme:dark){
+  .word-mode.on{background:#5b4938;color:var(--ink)}
+  .noun-mode .word-mode.on{background:#46563d;color:#f0e7d8}
+}
+@media print{
+  .word-modes{display:none!important}
+}

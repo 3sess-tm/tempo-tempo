@@ -29,9 +29,13 @@
   </div>
   <div class="panel" id="panel">
     <div class="card ex">
+      <div class="word-modes" role="group" aria-label="Wortart wählen">
+        <button type="button" class="word-mode on" data-mode="verbs" aria-pressed="true">Verben</button>
+        <button type="button" class="word-mode" data-mode="nouns" aria-pressed="false">Substantive</button>
+      </div>
       <div class="tabs" role="tablist">
-        <button class="tab on" data-tab="t1" role="tab">Deutsch → Latein</button>
-        <button class="tab" data-tab="t2" role="tab">Form bestimmen</button>
+        <button class="tab on" data-tab="t1" role="tab"><span class="verb-tab-label">Deutsch → Latein</span><span class="noun-tab-label" hidden>Substantiv bilden</span></button>
+        <button class="tab" data-tab="t2" role="tab"><span class="verb-tab-label">Form bestimmen</span><span class="noun-tab-label" hidden>Kasus &amp; Numerus bestimmen</span></button>
         <button class="tab" data-tab="t4" role="tab" id="tab4" hidden>Meine Verben</button>
         <button class="tab" data-tab="shop" role="tab">Shop</button>
         <button class="tab" data-tab="t5" role="tab">Rangliste</button>
@@ -46,14 +50,14 @@
           </div>
           <div class="row"><button type="submit">Prüfen</button><button type="button" id="dnew" class="sec">Neue Aufgabe</button><button type="button" id="dshow" class="sec">Lösung zeigen</button></div>
         </form>
-        <div class="hint mini">Aus dem Kopf eintippen – oder auf der Scheibe einstellen und die richtige Zeile antippen.</div>
+        <div id="exerciseHint" class="hint mini">Aus dem Kopf eintippen – oder auf der Scheibe einstellen und die richtige Zeile antippen.</div>
         <div id="dres"></div>
         <div id="dscore" class="hint"></div>
         <div id="dstats" class="dstats"></div>
         <div id="tfilter" class="tfilter"></div>
       </section>
       <section id="t2" class="tp">
-        <div class="hint mini">Stelle die Scheibe so ein, dass die Form im Fenster steht, dann „Prüfen“.</div>
+        <div id="identifyHint" class="hint mini">Stelle Verb und Tempus auf der Scheibe so ein, dass die Form passt, dann „Prüfen“.</div>
         <div id="qform">–</div>
         <div class="row"><button id="qnew">Neue Form</button><button id="qcheck" class="sec">Prüfen</button><button id="qshow" class="sec">Lösung</button></div>
         <div id="qres"></div>
@@ -103,7 +107,8 @@
       </section>
       <section id="t3" class="tp hint">
         <button type="button" class="sec small introbtn" id="introagain">✦ Einführung nochmal zeigen</button>
-        <p>Das Fenster bleibt oben auf 12 Uhr. <b>Mittleren Ring</b> drehen = Verb wählen, <b>äußeren Ring</b> drehen = Tempus wählen. Eine Form im Fenster antippen zeigt die Übersetzung.</p>
+        <p>Das Fenster bleibt oben auf 12 Uhr. <b>Mittleren Ring</b> drehen = Wort wählen, <b>äußeren Ring</b> drehen = Tempus oder Kasus wählen. Die Zeilen im Fenster zeigen Personen oder Numeri; eine Form antippen deckt sie auf.</p>
+        <p><b>Substantive:</b> Oben zwischen Verben und Substantiven wechseln. Der mittlere Ring wählt ein Nomen, der äußere den Kasus, die Zeilen Singular oder Plural. Nominativ und Genitiv Singular zeigen Lemma und Deklination; bei Neutra sind Nominativ, Akkusativ und Vokativ gleich.</p>
         <p>Vorlesen: Beim Aufdecken wird genau die angetippte Form gesprochen, bei „Lösung zeigen“ die Lösung. Vorlesen ist zu Beginn aus und spricht nur, wenn oben „weiblich“ oder „männlich“ gewählt ist; dann wiederholt 🔊 eine Form. Aussprache klassisch: c wie k, v wie w.</p><p>Die Formen im Fenster sind verdeckt – erst überlegen, dann Zeile antippen zum Aufdecken. Nochmal antippen verdeckt sie wieder. Darunter: „alle aufdecken“ und „alle verdecken“.</p><p>Münzen: aus dem Kopf mit allen Längen getippt 4 Asse · ohne Längen oder nach dem Aufdecken 2 Asse · auf der Scheibe die richtige Zeile gleich beim ersten Mal angetippt 2 Asse, nach Probieren 1 As · Form bestimmt 2 Asse · nach „Lösung zeigen“ keine Münze. Du hast 3 Versuche mit Hinweisen; ist auch der 4. falsch, kommt die Lösung und pro Fehlversuch wird 1 As abgezogen (also 4 Asse). Im <b>Shop</b> kannst du weitere Räder und Skins mit Assen kaufen. Käufe bleiben in diesem Browser gespeichert; die Rangliste zählt weiterhin alle verdienten Asse.</p>
         <div class="vbox"><b>Stimme wählen</b>
           <div class="row" style="align-items:center"><select id="vlist"></select><button type="button" id="vtest" class="sec small" style="margin-top:0">angetippte Form anhören</button></div>
@@ -145,13 +150,14 @@
 <div id="intro" role="dialog" aria-modal="true" aria-labelledby="ititle" hidden>
   <div class="iwrap"><div class="icard">
     <div class="ihead"><div class="ilaurel">✦</div><h2 id="ititle">Salvē! Willkommen bei <i>tempo, tempo</i> – fit in Formen</h2>
-      <p class="isub">Hier übst du lateinische Verbformen – drehen, aufdecken, Münzen sammeln.</p></div>
+      <p class="isub">Hier übst du lateinische Verb- und Substantivformen – drehen, aufdecken, Münzen sammeln.</p></div>
     <div class="ibody">
     <ol class="isteps">
-      <li><span class="ico">↻</span><div><b>Scheibe drehen</b><br>Mittlerer Ring = <b>Verb</b>, äußerer Ring = <b>Tempus</b>. Ziehen und loslassen – die Scheibe rastet ein. Die Formen erscheinen oben in der Mitte.</div></li>
+      <li><span class="ico">↻</span><div><b>Scheibe drehen</b><br>Mittlerer Ring = <b>Wort</b>, äußerer Ring = <b>Tempus oder Kasus</b>. Ziehen und loslassen – die Scheibe rastet ein. Personen bzw. Numeri stehen im Fenster.</div></li>
       <li><span class="ico">👆</span><div><b>Formen aufdecken</b><br>Die Formen sind verdeckt: erst überlegen, dann eine Zeile antippen. Nochmal tippen verdeckt sie wieder.</div></li>
       <li><span class="ico">✎</span><div><b>Übung „Deutsch → Latein“</b><br>Lösung <b>eintippen</b> – oder auf der Scheibe einstellen und die richtige Zeile antippen. Bei richtiger Antwort dreht sich die Scheibe zur Lösung.</div></li>
-      <li><span class="ico">?</span><div><b>Übung „Form bestimmen“</b><br>Eine lateinische Form erscheint – stelle Verb und Tempus auf der Scheibe ein und prüfe.</div></li>
+      <li><span class="ico">?</span><div><b>Übung „Form bestimmen“</b><br>Eine lateinische Form erscheint – stelle Wort und Tempus oder Kasus auf der Scheibe ein und prüfe.</div></li>
+      <li><span class="ico">Aa</span><div><b>Substantive üben</b><br>Wechsle oben die Wortart: Der mittlere Ring wählt das Substantiv, der äußere den Kasus, die Zeilen Singular oder Plural. Der Genitiv Singular zeigt die Deklination.</div></li>
       <li><span class="ico">🪙</span><div><b>Münzen sammeln</b><br>Für jede richtige Antwort gibt es Asse – mit allen Längenstrichen aus dem Kopf sogar einen ganzen Sesterz. 4 Asse = 1 Sesterz, 4 Sesterzen = 1 Denar, 25 Denare = 1 Aureus. <b>Achtung:</b> 3 Versuche mit Hinweisen – ist auch der 4. falsch, kommt die Lösung und es werden 4 Asse abgezogen.</div></li>
     </ol>
     <div class="tzt">

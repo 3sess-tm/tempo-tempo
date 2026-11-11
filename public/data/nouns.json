@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "cases": ["Nominativ", "Genitiv", "Dativ", "Akkusativ", "Ablativ", "Vokativ"],
+  "numbers": ["Singular", "Plural"],
+  "nouns": [
+    {
+      "nom": "puella", "gen": "puellae", "gender": "f.", "declension": "1. Deklination",
+      "meaning": "das Mädchen",
+      "forms": [
+        ["puella", "puellae", "puellae", "puellam", "puellā", "puella"],
+        ["puellae", "puellārum", "puellīs", "puellās", "puellīs", "puellae"]
+      ],
+      "german": [
+        ["das Mädchen", "des Mädchens", "dem Mädchen", "das Mädchen", "mit dem Mädchen", "O Mädchen!"],
+        ["die Mädchen", "der Mädchen", "den Mädchen", "die Mädchen", "mit den Mädchen", "O Mädchen!"]
+      ]
+    },
+    {
+      "nom": "agricola", "gen": "agricolae", "gender": "m.", "declension": "1. Deklination",
+      "meaning": "der Bauer",
+      "forms": [
+        ["agricola", "agricolae", "agricolae", "agricolam", "agricolā", "agricola"],
+        ["agricolae", "agricolārum", "agricolīs", "agricolās", "agricolīs", "agricolae"]
+      ],
+      "german": [
+        ["der Bauer", "des Bauern", "dem Bauern", "den Bauern", "mit dem Bauern", "O Bauer!"],
+        ["die Bauern", "der Bauern", "den Bauern", "die Bauern", "mit den Bauern", "O Bauern!"]
+      ]
+    },
+    {
+      "nom": "servus", "gen": "servī", "gender": "m.", "declension": "2. Deklination",
+      "meaning": "der Sklave",
+      "forms": [
+        ["servus", "servī", "servō", "servum", "servō", "serve"],
+        ["servī", "servōrum", "servīs", "servōs", "servīs", "servī"]
+      ],
+      "german": [
+        ["der Sklave", "des Sklaven", "dem Sklaven", "den Sklaven", "mit dem Sklaven", "O Sklave!"],
+        ["die Sklaven", "der Sklaven", "den Sklaven", "die Sklaven", "mit den Sklaven", "O Sklaven!"]
+      ]
+    },
+    {
+      "nom": "puer", "gen": "puerī", "gender": "m.", "declension": "2. Deklination",
+      "meaning": "der Junge",
+      "forms": [
+        ["puer", "puerī", "puerō", "puerum", "puerō", "puer"],
+        ["puerī", "puerōrum", "puerīs", "puerōs", "puerīs", "puerī"]
+      ],
+      "german": [
+        ["der Junge", "des Jungen", "dem Jungen", "den Jungen", "mit dem Jungen", "O Junge!"],
+        ["die Jungen", "der Jungen", "den Jungen", "die Jungen", "mit den Jungen", "O Jungen!"]
+      ]
+    },
+    {
+      "nom": "bellum", "gen": "bellī", "gender": "n.", "declension": "2. Deklination",
+      "meaning": "der Krieg",
+      "forms": [
+        ["bellum", "bellī", "bellō", "bellum", "bellō", "bellum"],
+        ["bella", "bellōrum", "bellīs", "bella", "bellīs", "bella"]
+      ],
+      "german": [
+        ["der Krieg", "des Krieges", "dem Krieg", "den Krieg", "mit dem Krieg", "O Krieg!"],
+        ["die Kriege", "der Kriege", "den Kriegen", "die Kriege", "mit den Kriegen", "O Kriege!"]
+      ]
+    },
+    {
+      "nom": "rēx", "gen": "rēgis", "gender": "m.", "declension": "3. Deklination",
+      "meaning": "der König",
+      "forms": [
+        ["rēx", "rēgis", "rēgī", "rēgem", "rēge", "rēx"],
+        ["rēgēs", "rēgum", "rēgibus", "rēgēs", "rēgibus", "rēgēs"]
+      ],
+      "german": [
+        ["der König", "des Königs", "dem König", "den König", "mit dem König", "O König!"],
+        ["die Könige", "der Könige", "den Königen", "die Könige", "mit den Königen", "O Könige!"]
+      ]
+    },
+    {
+      "nom": "nōmen", "gen": "nōminis", "gender": "n.", "declension": "3. Deklination",
+      "meaning": "der Name",
+      "forms": [
+        ["nōmen", "nōminis", "nōminī", "nōmen", "nōmine", "nōmen"],
+        ["nōmina", "nōminum", "nōminibus", "nōmina", "nōminibus", "nōmina"]
+      ],
+      "german": [
+        ["der Name", "des Namens", "dem Namen", "den Namen", "mit dem Namen", "O Name!"],
+        ["die Namen", "der Namen", "den Namen", "die Namen", "mit den Namen", "O Namen!"]
+      ]
+    },
+    {
+      "nom": "cīvis", "gen": "cīvis", "gender": "m./f.", "declension": "3. Deklination (i-Stamm)",
+      "meaning": "der Bürger / die Bürgerin",
+      "forms": [
+        ["cīvis", "cīvis", "cīvī", "cīvem", "cīve", "cīvis"],
+        ["cīvēs", "cīvium", "cīvibus", "cīvēs", "cīvibus", "cīvēs"]
+      ],
+      "german": [
+        ["der Bürger / die Bürgerin", "des Bürgers / der Bürgerin", "dem Bürger / der Bürgerin", "den Bürger / die Bürgerin", "mit dem Bürger / der Bürgerin", "O Bürger / O Bürgerin!"],
+        ["die Bürgerinnen und Bürger", "der Bürgerinnen und Bürger", "den Bürgerinnen und Bürgern", "die Bürgerinnen und Bürger", "mit den Bürgerinnen und Bürgern", "O Bürgerinnen und Bürger!"]
+      ]
+    },
+    {
+      "nom": "manūs", "gen": "manūs", "gender": "f.", "declension": "4. Deklination",
+      "meaning": "die Hand",
+      "forms": [
+        ["manūs", "manūs", "manuī", "manum", "manū", "manūs"],
+        ["manūs", "manuum", "manibus", "manūs", "manibus", "manūs"]
+      ],
+      "german": [
+        ["die Hand", "der Hand", "der Hand", "die Hand", "mit der Hand", "O Hand!"],
+        ["die Hände", "der Hände", "den Händen", "die Hände", "mit den Händen", "O Hände!"]
+      ]
+    },
+    {
+      "nom": "cornū", "gen": "cornūs", "gender": "n.", "declension": "4. Deklination",
+      "meaning": "das Horn",
+      "forms": [
+        ["cornū", "cornūs", "cornū", "cornū", "cornū", "cornū"],
+        ["cornua", "cornuum", "cornibus", "cornua", "cornibus", "cornua"]
+      ],
+      "german": [
+        ["das Horn", "des Horns", "dem Horn", "das Horn", "mit dem Horn", "O Horn!"],
+        ["die Hörner", "der Hörner", "den Hörnern", "die Hörner", "mit den Hörnern", "O Hörner!"]
+      ]
+    },
+    {
+      "nom": "diēs", "gen": "diēī", "gender": "m.", "declension": "5. Deklination",
+      "meaning": "der Tag",
+      "forms": [
+        ["diēs", "diēī", "diēī", "diem", "diē", "diēs"],
+        ["diēs", "diērum", "diēbus", "diēs", "diēbus", "diēs"]
+      ],
+      "german": [
+        ["der Tag", "des Tages", "dem Tag", "den Tag", "mit dem Tag", "O Tag!"],
+        ["die Tage", "der Tage", "den Tagen", "die Tage", "mit den Tagen", "O Tage!"]
+      ]
+    },
+    {
+      "nom": "rēs", "gen": "reī", "gender": "f.", "declension": "5. Deklination",
+      "meaning": "die Sache",
+      "forms": [
+        ["rēs", "reī", "reī", "rem", "rē", "rēs"],
+        ["rēs", "rērum", "rēbus", "rēs", "rēbus", "rēs"]
+      ],
+      "german": [
+        ["die Sache", "der Sache", "der Sache", "die Sache", "mit der Sache", "O Sache!"],
+        ["die Sachen", "der Sachen", "den Sachen", "die Sachen", "mit den Sachen", "O Sachen!"]
+      ]
+    }
+  ]
+}

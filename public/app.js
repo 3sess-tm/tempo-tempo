@@ -4,11 +4,27 @@ fetch("/data/wheels.json").then(response => {
 }).then(wheelCatalog => fetch("/data/shop.json").then(response => {
   if (!response.ok) throw new Error("Shop catalog could not be loaded");
   return response.json();
-}).then(shopCatalog => {
+}).then(shopCatalog => fetch("/data/nouns.json").then(response => {
+  if (!response.ok) throw new Error("Noun catalog could not be loaded");
+  return response.json();
+}).then(nounCatalog => {
 wheelCatalog.wheels.push(...shopCatalog.wheels);
 wheelCatalog.skins = shopCatalog.skins;
 const BASE_D = wheelCatalog.wheels.find(item=>item.id==='starter').data;
-let D = BASE_D;
+let verbData = BASE_D, D = verbData, gameMode = 'verbs';
+const CASES = nounCatalog.cases;
+const NUMBERS = nounCatalog.numbers;
+const NOUN_D = {
+  isNoun: true,
+  verbs: nounCatalog.nouns.map(noun=>noun.nom),
+  konj: nounCatalog.nouns.map(noun=>noun.declension),
+  tenses: CASES,
+  pers: NUMBERS,
+  nouns: nounCatalog.nouns,
+  forms: nounCatalog.nouns.flatMap((noun, v)=>noun.forms.flatMap((forms, p)=>forms.map((form, t)=>[
+    form, v, t, p, [[form, 'S']], noun.german[p][t]
+  ])))
+};
 const SHOP_KEY = 'tempo-shop-stand-v1';
 const wheelIds = new Set(wheelCatalog.wheels.map(item=>item.id));
 const skinIds = new Set(wheelCatalog.skins.map(item=>item.id));
@@ -59,9 +75,9 @@ function updateFlip(){
 function buildWheel(){
   const gA=document.getElementById('gA'), gB=document.getElementById('gB'), gC=document.getElementById('gC'), gF=document.getElementById('gFix');
   gA.innerHTML=''; gB.innerHTML=''; gC.innerHTML=''; gF.innerHTML=''; FLIP.length=0;
-  // Ring A: Tempora – Präsensstamm sanft grün, Perfektstamm sanft rot
+  // Ring A: Tempora bei Verben, Kasus bei Substantiven
   D.tenses.forEach((name,t)=>{
-    const th=60*t, g=t<3;
+    const th=60*t, g=D.isNoun || t<3;
     el('path',{d:sector(R_AB,R_OUT,th-30,th+30),fill:g?palette.present:palette.perfect},gA);
     el('path',{d:sector(R_AB,R_OUT,th+29.7,th+30.3),fill:palette.paper},gA);
     arcText(gA,name,87.2,th,40,'lblA','A').setAttribute('fill',g?palette.presentInk:palette.perfectInk);
@@ -69,7 +85,7 @@ function buildWheel(){
   });
   el('circle',{r:R_OUT,fill:'none',stroke:palette.rim,'stroke-width':0.6},gA);
   buildRingB();
-  // innere Scheibe (fest), Farbton folgt dem Stamm
+  // innere Scheibe (fest), Farbton folgt der ausgewählten Achse
   el('circle',{id:'cdisc',r:R_BC,fill:palette.paper},gC);
   el('circle',{r:R_BC-1.6,fill:'none',stroke:palette.inner,'stroke-width':0.7,opacity:.55},gC);
   // fester Zeiger auf 12 Uhr
@@ -80,14 +96,19 @@ function buildRingB(){
   gB.innerHTML=''; for (let i=FLIP.length-1;i>=0;i--) if (FLIP[i].ring==='B') FLIP.splice(i,1);
   NV = D.verbs.length; VS = 360/Math.max(NV,1);
   D.verbs.forEach((vb,v)=>{
-    const th=VS*v, name=vb.split(' ')[0], de=vb.split('(')[1].replace(')','');
+    const th=VS*v;
+    const name=D.isNoun ? D.nouns[v].nom : vb.split(' ')[0];
+    const de=D.isNoun ? D.nouns[v].meaning : vb.split('(')[1].replace(')','');
     const fillB = v%2?palette.ringOdd:palette.ringEven;
     if (VS>=180){ el('path',{d:sector(R_BC,R_AB,th-VS/2,th),fill:fillB},gB); el('path',{d:sector(R_BC,R_AB,th,th+VS/2),fill:fillB},gB); }
     else el('path',{d:sector(R_BC,R_AB,th-VS/2,th+VS/2),fill:fillB},gB);
     el('path',{d:sector(R_BC,R_AB,th+VS/2-0.3,th+VS/2+0.3),fill:palette.paper},gB);
     arcText(gB,name,70.0,th,Math.min(VS*0.62,80),'lblB','B',4.3,64.0).setAttribute('fill',palette.ringText);
     arcText(gB,de,64.4,th,Math.min(VS*0.62,80),'lblB2','B',3.3,68.6).setAttribute('fill',palette.ringSub);
-    arcText(gB,D.konj[v],59.4,th,Math.min(VS*0.62,80),'lblB3','B',2.8,72.8).setAttribute('fill',palette.ringKonj);
+    const category=D.isNoun
+      ? `${D.nouns[v].declension[0]}.${D.nouns[v].declension.includes('i-Stamm')?' i':''}`
+      : D.konj[v];
+    arcText(gB,category,59.4,th,Math.min(VS*0.62,80),'lblB3','B',2.8,72.8).setAttribute('fill',palette.ringKonj);
     el('path',{d:`M${P(R_AB,th)}L${P(R_AB-2.8,th-2.4)}L${P(R_AB-2.8,th+2.4)}Z`,fill:palette.ringText},gB);
   });
 }
@@ -129,12 +150,17 @@ function pfLine(v){
 }
 function readout(){
   const {v,t,ok} = state();
-  const tc = t<3?'g':'r';
-  document.getElementById('readout').innerHTML = `${D.verbs[v]} <span class="kj">${D.konj[v]}</span> · <span class="t ${tc}">${D.tenses[t]}</span>`;
+  const tc = D.isNoun || t<3?'g':'r';
+  const itemLabel=D.isNoun
+    ? `${D.nouns[v].nom}, ${D.nouns[v].gen} (${D.nouns[v].gender})`
+    : D.verbs[v];
+  const categoryLabel=D.isNoun ? D.nouns[v].declension : D.konj[v];
+  document.getElementById('readout').innerHTML = `${itemLabel} <span class="kj">${categoryLabel}</span> · <span class="t ${tc}">${D.tenses[t]}</span>`;
   const mn = t===2 && mnem(v);
-  document.getElementById('whead').innerHTML = `${D.verbs[v].split(' ')[0]} · <span class="t ${tc}">${D.tenses[t]}</span>` +
-     (mn ? `<div class="mnem"><span class="mico">${mn.ico}</span> ${mn.short}</div>` : '') + (t>=3 ? pfLine(v) : '');
-  const cd = document.getElementById('cdisc'); if (cd) cd.setAttribute('fill', t<3 ? palette.presentDisc : palette.perfectDisc);
+  const wheelLabel=D.isNoun ? `${D.nouns[v].nom}, ${D.nouns[v].gen} (${D.nouns[v].gender})` : D.verbs[v].split(' ')[0];
+  document.getElementById('whead').innerHTML = `${wheelLabel} · <span class="t ${tc}">${D.tenses[t]}</span>` +
+     (!D.isNoun && mn ? `<div class="mnem"><span class="mico">${mn.ico}</span> ${mn.short}</div>` : '') + (!D.isNoun && t>=3 ? pfLine(v) : '');
+  const cd = document.getElementById('cdisc'); if (cd) cd.setAttribute('fill', D.isNoun ? palette.paper : t<3 ? palette.presentDisc : palette.perfectDisc);
   const key = v+'-'+t;
   if (key !== shownKey){ shownKey = key; revealed.clear(); sel = -1; if (rightRow && rightRow[1]===v && rightRow[2]===t){ revealed.add(rightRow[3]); sel = rightRow[3]; } }
   document.getElementById('wtab').innerHTML = D.forms.filter(f=>f[1]===v && f[2]===t)
@@ -198,7 +224,7 @@ document.getElementById('wtab').addEventListener('click', e=>{
 });
 document.getElementById('wall').addEventListener('click', ()=>{
   if (!state().ok) return;
-  for (let i=0;i<6;i++) revealed.add(i); peek(); readout();
+  for (let i=0;i<D.pers.length;i++) revealed.add(i); peek(); readout();
 });
 document.getElementById('wnone').addEventListener('click', ()=>{
   revealed.clear(); sel = -1; readout();
@@ -354,6 +380,15 @@ document.getElementById('sound').textContent = soundOn ? '🔊 Ton an' : '🔇 T
 
 // ---------- Übung: Form bestimmen ----------
 let q=null, qdone=false, qtries=0;
+function itemShort(v){
+  return D.isNoun ? `${D.nouns[v].nom}, ${D.nouns[v].gen} (${D.nouns[v].gender})` : D.verbs[v].split(' ')[0];
+}
+function formContext(f){ return `${D.tenses[f[2]]}, ${D.pers[f[3]]}`; }
+function taskForms(form){
+  return D.isNoun
+    ? D.forms.filter(f=>f[1]===form[1] && f[2]===form[2] && f[3]===form[3])
+    : D.forms.filter(f=>f[5]===form[5]);
+}
 document.getElementById('qnew').onclick = ()=>{
   q = D.forms[Math.floor(Math.random()*D.forms.length)]; qdone=false; qtries=0;
   document.getElementById('qform').textContent = q[0];
@@ -376,9 +411,18 @@ document.getElementById('qcheck').onclick = ()=>{
     qtries++;
     if (qtries >= MAXTRY){ const lost = penalty(MAXTRY, `${MAXTRY} Fehlversuche`); qSolution(`<span class="no">✗ Auch der ${MAXTRY}. Versuch war leider falsch – ${lost ? `−${lost} ${lost===1?'As':'Asse'}` : 'keine Münzen mehr in der Kasse'}.</span> Hier ist die Lösung:<br>`); return; }
     const left = MAXTRY - qtries, g = hits[0];
-    let h = hits.some(f=>f[1]===v) ? '<span class="no">Das Verb stimmt, das Tempus noch nicht.</span> Achte auf das Tempuszeichen.'
-                                   : '<span class="no">Noch nicht.</span> Das eingestellte Verb passt nicht.';
-    if (qtries >= 2) h += `<div class="hbx"><b>Tipp:</b> ${g[2]<3 ? 'Die Form gehört zum <b>Präsensstamm</b> (grün).' : 'Die Form gehört zum <b>Perfektstamm</b> (rot).'}</div>`;
+    let h;
+    if (D.isNoun){
+      h = hits.some(f=>f[1]===v && f[2]===t)
+        ? '<span class="no">Substantiv und Kasus stimmen. Prüfe den Numerus.</span>'
+        : hits.some(f=>f[1]===v)
+          ? '<span class="no">Das Substantiv stimmt, aber der Kasus noch nicht.</span>'
+          : '<span class="no">Noch nicht.</span> Das eingestellte Substantiv passt nicht.';
+    }else{
+      h = hits.some(f=>f[1]===v) ? '<span class="no">Das Verb stimmt, das Tempus noch nicht.</span> Achte auf das Tempuszeichen.'
+                                 : '<span class="no">Noch nicht.</span> Das eingestellte Verb passt nicht.';
+    }
+    if (qtries >= 2) h += `<div class="hbx"><b>Tipp:</b> ${D.isNoun ? `Der Genitiv lautet <span class="lat">${D.nouns[g[1]].gen}</span>; daran erkennt man die Deklination.` : g[2]<3 ? 'Die Form gehört zum <b>Präsensstamm</b> (grün).' : 'Die Form gehört zum <b>Perfektstamm</b> (rot).'}</div>`;
     if (qtries >= 3) h += tzHint(g);
     h += `<div class="tries">${left===1 ? '⚠ Letzter Versuch!' : `Noch ${left} Versuche`} ${'●'.repeat(qtries)}${'○'.repeat(left)}</div>`;
     r.innerHTML = h;
@@ -388,7 +432,7 @@ function qSolution(intro){
   qdone = true; speak([q[0]]);
   const hits = D.forms.filter(f=>f[0]===q[0]), g = hits[0];
   setWheel(g[1], g[2], g[3]); revealed.add(g[3]); readout();
-  document.getElementById('qres').innerHTML = (intro||'') + hits.map(f=>`${D.verbs[f[1]].split(' ')[0]}: ${D.tenses[f[2]]}, ${D.pers[f[3]]} – <i>${f[5]}</i>`).join('<br>') + ' <span class="hint">(ohne Münze)</span>';
+  document.getElementById('qres').innerHTML = (intro||'') + hits.map(f=>`${itemShort(f[1])}: ${formContext(f)} – <i>${f[5]}</i>`).join('<br>') + ' <span class="hint">(ohne Münze)</span>';
 }
 document.getElementById('qshow').onclick = ()=>{ if (q) qSolution(''); };
 
@@ -400,7 +444,9 @@ const MAXTRY = 4;   // 3 Versuche mit Hinweisen, ist auch der 4. falsch, kommt d
 const din = document.getElementById('din'), dres = document.getElementById('dres');
 function dnew(focus=true){
   dq = pickForm(); dmiss=false; ddone=false; dpeek=false; dwrong=0; dtries=0;
-  document.getElementById('dprompt').textContent = dq[5];
+  document.getElementById('dprompt').textContent = D.isNoun
+    ? `${dq[5]} — ${formContext(dq)}`
+    : dq[5];
   din.value=''; dres.innerHTML=''; sel=-1; rightRow=null; revealed.clear(); readout();
   if (focus) din.focus({preventScroll:true});
 }
@@ -428,6 +474,12 @@ function success(f, asse, why, extra=''){
 }
 function markRight(f){ rightRow = f; revealed.add(f[3]); readout(); }
 function wrongTip(other, g){
+  if (D.isNoun){
+    if (other && other[1]===g[1] && other[2]===g[2]) return 'Substantiv und Kasus stimmen, aber der Numerus nicht.';
+    if (other && other[1]===g[1] && other[3]===g[3]) return 'Substantiv und Numerus stimmen, aber der Kasus nicht.';
+    if (other && other[1]===g[1]) return 'Das Substantiv stimmt, prüfe Kasus und Numerus.';
+    return '';
+  }
   if (other && other[1]===g[1] && other[2]===g[2]) return 'Tempus stimmt – aber die Person nicht. Schau auf die Personalendung.';
   if (other && other[1]===g[1]) return `Das ist ${D.tenses[other[2]]} (${other[5]}). Gesucht ist ${D.tenses[g[2]]}.`;
   return '';
@@ -435,6 +487,13 @@ function wrongTip(other, g){
 // Hilfe bei Fehlern: nur Stammformen + Personalendungen (keine Stamm-Tipps)
 const PE_PRAES = '-ō / -m, -s, -t, -mus, -tis, -nt', PE_PERF = '-ī, -istī, -it, -imus, -istis, -ērunt';
 function helpBox(g){
+  if (D.isNoun){
+    const noun=D.nouns[g[1]];
+    const neuter=noun.gender==='n.';
+    return `<div class="hbx"><b>Lemma:</b> <span class="lat">${noun.nom}, ${noun.gen} (${noun.gender})</span> · ${noun.declension}</div>`+
+      `<div class="hbx"><b>Gesucht:</b> ${D.tenses[g[2]]}, ${D.pers[g[3]]}. Das Genitiv-Singular-Ende hilft, die Deklination zu erkennen.</div>`+
+      (neuter?'<div class="hbx">Bei Neutra sind Nominativ, Akkusativ und Vokativ gleich; im Plural enden diese Formen oft auf <span class="lat">-a</span>.</div>':'');
+  }
   const m = g[2]===2 && mnem(g[1]);
   const sf = `<div class="hbx"><b>Stammformen:</b> <span class="lat">${D.stamm[g[1]]}</span></div>` + (m ? `<div class="hbx">${m.ico} ${m.long}</div>` : '') + (g[2]>=3 && D.pft ? `<div class="hbx"><b>Perfektbildung:</b> ${D.pft[g[1]]}</div>` : '');
   let pe;
@@ -447,7 +506,7 @@ document.getElementById('dform').addEventListener('submit', e=>{
   e.preventDefault();
   if (!dq){ dnew(); return; }
   const a = norm(din.value); if (!a){ if (ddone) dnew(); return; }
-  const goal = D.forms.filter(f=>f[5]===dq[5]);
+  const goal = taskForms(dq);
   if (!ddone) dall++;
   let hit = goal.find(f=>norm(f[0])===a), altHit = false;
   if (!hit){ hit = goal.find(f=>(f[6]||[]).some(x=>norm(x)===a)); altHit = !!hit; }
@@ -480,10 +539,13 @@ function checkWheelClick(p){
   if (!ok){ dres.innerHTML = '<span class="no">Erst einrasten lassen</span>, dann die Zeile antippen.'; return; }
   const f = D.forms.find(x=>x[1]===v && x[2]===t && x[3]===p);
   if (ddone) return;
-  if (f[5]===dq[5]){ dall++; success(f, dwrong?1:2, dwrong?'gefunden, nach Probieren':'auf der Scheibe gefunden'); }
+  const correct=D.isNoun
+    ? f[1]===dq[1] && f[2]===dq[2] && f[3]===dq[3]
+    : f[5]===dq[5];
+  if (correct){ dall++; success(f, dwrong?1:2, dwrong?'gefunden, nach Probieren':'auf der Scheibe gefunden'); }
   else {
     dwrong++; onWrong(dq);
-    const g = D.forms.find(x=>x[5]===dq[5]), tip = wrongTip(f, g);
+    const g = taskForms(dq)[0], tip = wrongTip(f, g);
     dres.innerHTML = `Auf der Scheibe angetippt: „${f[0]}“ = <i>${f[5]}</i> – passt noch nicht zur Aufgabe. ${tip}` + helpBox(g);
   }
 }
@@ -494,6 +556,10 @@ function showSolution(g, intro){
   speak([g[0]]);
 }
 function tzHint(g){
+  if (D.isNoun){
+    const noun=D.nouns[g[1]];
+    return `<div class="hbx"><b>Tipp:</b> Gesucht ist <b>${D.tenses[g[2]]} ${D.pers[g[3]]}</b>. ${noun.gender==='n.'?'Bei einem Neutrum sind Nominativ, Akkusativ und Vokativ gleich.':'Vergleiche die Endung mit dem Genitiv-Stamm.'}</div>`;
+  }
   const T = g[4].filter(s=>s[1]==='T').map(s=>s[0]);
   const txt = T.length ? `Das Tempuszeichen hier ist <span class="k-T ${(g[2]===2||g[2]===5)?'fut':'imp'}">-${T.join('-')}-</span>.`
                        : (g[2]===3 ? 'Im Perfekt gibt es kein Tempuszeichen – nur Perfektstamm + Perfektendung.' : 'Im Präsens gibt es kein Tempuszeichen – nur Stamm + Personalendung.');
@@ -501,7 +567,7 @@ function tzHint(g){
 }
 document.getElementById('dshow').onclick = ()=>{
   if (!dq) return;
-  showSolution(D.forms.filter(f=>f[5]===dq[5])[0]);
+  showSolution(taskForms(dq)[0]);
 };
 
 // ---------- Layout: alles auf einen Bildschirm ----------
@@ -512,6 +578,34 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
   if (b.dataset.tab==='t5') lbLoad();
   if (b.dataset.tab==='shop') renderShop();
 });
+function setGameMode(mode){
+  if (mode!=='verbs' && mode!=='nouns' || mode===gameMode) return;
+  if (gameMode==='verbs') verbData=D;
+  const activeTab=document.querySelector('.tab.on');
+  gameMode=mode;
+  D=gameMode==='nouns' ? NOUN_D : verbData;
+  if (activeTab && activeTab.dataset.tab==='t4') document.querySelector('.tab[data-tab="t1"]').click();
+  document.body.classList.toggle('noun-mode', D.isNoun);
+  document.querySelectorAll('.word-mode').forEach(button=>{
+    const active=button.dataset.mode===gameMode;
+    button.classList.toggle('on',active);
+    button.setAttribute('aria-pressed',String(active));
+  });
+  document.querySelectorAll('.verb-tab-label').forEach(label=>label.hidden=D.isNoun);
+  document.querySelectorAll('.noun-tab-label').forEach(label=>label.hidden=!D.isNoun);
+  document.getElementById('tab4').hidden=D.isNoun || !D.custom;
+  document.getElementById('exerciseHint').textContent=D.isNoun
+    ? 'Bilde die gesuchte Form mit richtiger Endung – oder stelle Kasus und Substantiv auf der Scheibe ein und tippe Singular oder Plural an.'
+    : 'Aus dem Kopf eintippen – oder auf der Scheibe einstellen und die richtige Zeile antippen.';
+  document.getElementById('identifyHint').textContent=D.isNoun
+    ? 'Stelle Substantiv und Kasus auf der Scheibe ein; wähle Singular oder Plural in der passenden Zeile.'
+    : 'Stelle Verb und Tempus auf der Scheibe so ein, dass die Form passt, dann „Prüfen“.';
+  document.getElementById('tfilter').setAttribute('aria-label', D.isNoun?'Kasusfilter':'Tempusfilter');
+  buildWheel();
+  rot={A:0,B:0}; rightRow=null; revealed.clear(); shownKey=''; sel=-1;
+  buildTF(); renderStats(); dnew(false); document.getElementById('qnew').click(); render();
+}
+document.querySelectorAll('.word-mode').forEach(button=>button.addEventListener('click',()=>setGameMode(button.dataset.mode)));
 function isTyping(){ const a=document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type!=='checkbox'; }
 function layout(){
   if (isTyping() && document.body.classList.length && (document.body.classList.contains('fit')||document.body.classList.contains('small'))) { keepVisible(); return; }   // Tastatur offen: Layout nicht umbauen
@@ -1001,8 +1095,8 @@ var ST = {streak:0, best:0, day:'', count:0, goal:false, weak:{}};
 try{ Object.assign(ST, JSON.parse(localStorage.getItem('drehscheibe-stats')||'{}')); }catch(e){}
 function saveST(){ try{ localStorage.setItem('drehscheibe-stats', JSON.stringify(ST)); }catch(e){} }
 function rollDay(){ const d=new Date().toISOString().slice(0,10); if (ST.day!==d){ ST.day=d; ST.count=0; ST.goal=false; saveST(); } }
-function wkey(f){ return D.verbs[f[1]]+'|'+f[2]+'|'+f[3]; }
-function pickForm(){                       // Wackelformen kommen öfter dran; Filter nach Zeiten
+function wkey(f){ return itemShort(f[1])+'|'+f[2]+'|'+f[3]; }
+function pickForm(){                       // Wackelformen kommen öfter dran; Filter nach Kasus oder Tempus
   let pool = D.forms;
   if (tenseOn.size) pool = pool.filter(f=>tenseOn.has(f[2]));
   if (!pool.length) pool = D.forms;
@@ -1030,12 +1124,13 @@ function renderStats(){
 }
 function buildTF(){
   const box=document.getElementById('tfilter'); if (!box) return;
-  try{ const s=JSON.parse(localStorage.getItem('drehscheibe-tempora')||'null'); if (Array.isArray(s)) tenseOn=new Set(s); }catch(e){}
-  box.innerHTML = '<span class="hint mini" title="nichts gewählt = alle Zeiten">Üben:</span>' + D.tenses.map((n,t)=>`<button type="button" class="chip2" data-t="${t}">${n}</button>`).join('');
+  const key=D.isNoun?'drehscheibe-kasus':'drehscheibe-tempora';
+  try{ const s=JSON.parse(localStorage.getItem(key)||'null'); if (Array.isArray(s)) tenseOn=new Set(s); else tenseOn.clear(); }catch(e){ tenseOn.clear(); }
+  box.innerHTML = `<span class="hint mini" title="nichts gewählt = alle ${D.isNoun?'Kasus':'Zeiten'}">Üben:</span>` + D.tenses.map((n,t)=>`<button type="button" class="chip2" data-t="${t}">${n}</button>`).join('');
   const paint=()=>box.querySelectorAll('.chip2').forEach(b=>b.classList.toggle('on', tenseOn.has(+b.dataset.t)));
   box.onclick=e=>{ const b=e.target.closest('.chip2'); if (!b) return; const t=+b.dataset.t;
     tenseOn.has(t) ? tenseOn.delete(t) : tenseOn.add(t);
-    try{ localStorage.setItem('drehscheibe-tempora', JSON.stringify([...tenseOn])); }catch(err){} paint(); };
+    try{ localStorage.setItem(key, JSON.stringify([...tenseOn])); }catch(err){} paint(); };
   paint();
 }
 { const MC={a:'ā',e:'ē',i:'ī',o:'ō',u:'ū',A:'Ā',E:'Ē',I:'Ī',O:'Ō',U:'Ū'};   // Schnelleingabe: a- → ā
@@ -1145,8 +1240,10 @@ function renderShop(){
 function activateWheel(id, persist=true){
   const item = wheelCatalog.wheels.find(entry=>entry.id===id);
   if (!item || !shopState.ownedWheels.includes(id)) return;
+  if (gameMode!=='verbs') setGameMode('verbs');
   D = item.data || {...BASE_D};
   if (!item.data) applyVerbs(item.verbs);
+  verbData=D;
   activeWheelId = item.id;
   shopState.activeWheel = item.id;
   if (persist) saveShopState();
@@ -1192,4 +1289,4 @@ renderPurse();
 if (shopState.activeWheel!=='starter') activateWheel(shopState.activeWheel,false);
 else { dnew(false); document.getElementById('qnew').click(); render(); }
 
-}));
+})));
