@@ -1,5 +1,6 @@
-:root{--red:#b5174a;--blue:#1f5fa8;--ink:#1d1d1f;--muted:#666;--bg:#faf8f4;}
-  *{box-sizing:border-box}
+
+  :root{--red:#9e3f2e;--ink:#2e2620;--muted:#7a6a55;--plaster:#f6efe1;--bg:#efe6d3;--line:#e0d1b1;
+        --gtxt:#3d5a35;--gbg:#d9e4cc;--rtxt:#7d3426;--rbg:#efd3c9;--blue:#2d5078;--bluebg:#dbe6f1;--yel:#5a4500;--yelbg:#f6dc7a}  *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);}
   header{padding:14px 16px 4px;text-align:center}
   h1{margin:0;font-size:1.25rem;color:var(--red)}
@@ -97,7 +98,6 @@
   .purse h2{margin-bottom:6px}
   #purse{gap:6px 10px}
   .purse .coin{width:30px;height:30px}
-  /* Ein-Bildschirm-Layouts (iPad & Desktop) */
   body.fit{overflow:hidden}
   body.fit main{height:calc(100dvh - var(--hh));}
   body.land main{flex-direction:row;align-items:center}
@@ -114,17 +114,14 @@
   .gbar{flex-basis:100%;height:6px;background:#e9dfc8;border-radius:4px;overflow:hidden}
   .gbar i{display:block;height:100%;background:#8aa05a;transition:width .3s}
   .tfilter{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center}
-  button.chip2{background:#ece7dc;color:var(--ink);padding:4px 9px;font-size:.78rem;border-radius:999px;font-weight:500}
+  button.chip2{background:var(--rgb);color:var(--ink);padding:4px 9px;font-size:.78rem;border-radius:999px;font-weight:500}
   button.chip2.on{background:var(--red);color:#fff}
   .txt{flex:1;min-width:0;font:inherit;padding:8px 10px;border:1.5px solid #d9d2c3;border-radius:9px;background:#fffdf8}
   .lbl{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px}
   .lbl li{display:flex;gap:8px;padding:4px 8px;border-radius:8px;background:#fffdf8;font-size:.92rem}
   .lbl li.me{background:#f7e9c8;font-weight:700}
   .lbl li b{flex:1;font-weight:inherit;overflow:hidden;text-overflow:ellipsis}
-
-  /* ---------- ruhig, antik-pompejanisch, gut lesbar ---------- */
-  :root{--red:#9e3f2e;--ink:#2e2620;--muted:#7a6a55;--plaster:#f6efe1;--bg:#efe6d3;--line:#e0d1b1;
-        --gtxt:#3d5a35;--gbg:#d9e4cc;--rtxt:#7d3426;--rbg:#efd3c9;--blue:#2d5078;--bluebg:#dbe6f1;--yel:#5a4500;--yelbg:#f6dc7a}
+  
   body{font-family:Lexend,system-ui,sans-serif;font-size:16px;color:var(--ink);background:var(--bg);letter-spacing:.01em}
   header{background:var(--plaster);border-bottom:3px solid var(--red);padding:8px 16px}
   header h1 small{font-size:.72em;letter-spacing:.03em;opacity:.85}
@@ -183,7 +180,6 @@
   #wtab tr:hover .cover{background:#dccfb2;color:#7a6a55}
   .wbtns{display:flex;gap:calc(var(--u)*var(--k,1)*1.2);justify-content:center}
   .linkish{background:none;color:var(--muted);font-weight:400;font-size:calc(var(--u)*var(--k,1)*2.1);padding:calc(var(--u)*var(--k,1)*.4) calc(var(--u)*var(--k,1)*1);text-decoration:underline;text-underline-offset:3px}
-  /* Formbausteine */
   .k-S{color:var(--ink)} .k-B{color:#5d7a4f} .k-H{color:#c2b394;font-weight:300}
   .k-E{color:var(--red);font-weight:700}
   .k-T{border-radius:.25em;padding:0 .08em}
@@ -208,7 +204,6 @@
   .legend span::before{display:none}
   .legend .sw{display:inline-block;padding:0 .35em;border-radius:.25em;margin-right:.3em}
 
-  /* ---------- Einführung ---------- */
   #intro{position:fixed;inset:0;z-index:50;background:rgba(60,40,20,.35);display:flex;align-items:center;justify-content:center;padding:14px}
   #intro[hidden]{display:none}
   .icard{background:var(--plaster);border:1px solid var(--line);border-radius:16px;max-width:620px;width:100%;max-height:calc(100dvh - 28px);overflow:auto;
@@ -264,7 +259,6 @@
     #igo{padding:8px 22px;font-size:1rem}
   }
   .tico{font-size:.62em;vertical-align:.25em;margin-right:.05em;opacity:.9}
-  /* Einführungs-Knopf als Schriftrolle */
   #introBtn{display:inline-flex;align-items:stretch;padding:0;background:none!important;border:0!important;margin:0;cursor:pointer;filter:drop-shadow(0 2px 3px rgba(80,50,15,.25));transition:transform .2s}
   #introBtn:hover{transform:translateY(-1px) scale(1.03)}
   #introBtn .scr{display:flex;align-items:center;gap:.35em;font-family:Cinzel,serif;font-weight:600;font-size:1.02rem;color:#5a3a12;letter-spacing:.04em;
@@ -274,7 +268,6 @@
   @media (max-width:700px){#introBtn .ibl{display:none}}
   @media (max-width:960px){#readout{visibility:hidden}}
 
-  /* Tempuszeichen-Übersicht: links Präsensstamm, rechts Perfektstamm, Zeilen parallel */
   .tzt{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:10px 0;font-size:.9rem;background:#fbf7ee}
   .tzh{padding:6px 10px;font-weight:700;text-align:center}
   .tzh small{font-weight:400;opacity:.8}
@@ -307,13 +300,11 @@
     .ibody .tzt{margin:0}
   }
 
-  /* Eingabefelder: immer dunkle Schrift auf hellem Grund – auch im Dunkelmodus des Geräts */
   :root{color-scheme:light}
   input,textarea,select{color:var(--ink)!important;-webkit-text-fill-color:var(--ink);caret-color:var(--red);background-color:#fffdf7;opacity:1}
   input::placeholder,textarea::placeholder{color:#a8977a!important;-webkit-text-fill-color:#a8977a;opacity:1}
   input[type=checkbox]{accent-color:var(--red)}
 
-  /* ---------- Handy: alles in Bildschirmbreite ---------- */
   html,body{max-width:100%;overflow-x:hidden}
   .iwrap{max-width:min(640px, calc(100vw - 28px))}
   .icard{box-sizing:border-box;width:100%}
@@ -369,7 +360,6 @@
      #shop .shop-head>span{text-align:left;max-width:none}
 }
 
-/* ---------- Kleine Displays: kompakte Scheibe, erreichbare Navigation ---------- */
 .wheel-toggle{display:none}
 @media(max-width:639px), (max-height:559px){
   body.small main{gap:8px;padding:8px 8px 20px}
@@ -392,7 +382,6 @@
   body.small #wtab td{padding-inline:calc(var(--u)*var(--k,1)*1.2)}
 }
 
-/* ---------- Automatischer Dunkelmodus ---------- */
 @media(prefers-color-scheme:dark){
   :root{
     color-scheme:dark;
@@ -428,7 +417,6 @@
   .k-P{background:#54372f;color:#f0b5a4}
 }
 
-/* ---------- Druckansicht: nur der aktive Bereich, ohne Bedienelemente ---------- */
 @media print{
   @page{margin:14mm}
   :root{color-scheme:light}
@@ -449,7 +437,6 @@
   a{color:#111;text-decoration:none}
 }
 
-/* ---------- Wortart-Wechsel für Verb- und Substantivübungen ---------- */
 .word-modes{display:flex;gap:6px;margin:0 0 8px;padding:4px;border:1px solid var(--line);border-radius:9px;width:max-content;max-width:100%}
 .word-mode{min-height:40px;padding:7px 14px;background:transparent;color:var(--muted)}
 .word-mode.on{background:var(--red);color:#fff}
