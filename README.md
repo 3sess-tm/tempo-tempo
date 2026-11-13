@@ -69,4 +69,6 @@ Der Shop bietet drei zusätzliche Verb-Räder und drei kaufbare Skins. Käufe un
 
 Das Layout passt sich kleinen Bildschirmen an: Die Drehscheibe lässt sich einklappen, und die Reiternavigation bleibt beim Scrollen erreichbar. Ein automatischer Dunkelmodus folgt der Systemeinstellung; beim Drucken werden Bedienelemente ausgeblendet und nur der gerade aktive Bereich ausgegeben.
 
+Die Spielbereiche sind auch direkt verlinkbar: `#practice`, `#identify`, `#my-verbs`, `#shop`, `#rome`, `#leaderboard` und `#help`. Auf Mobilgeräten lässt sich innerhalb des aktiven Bereichs horizontal wischen; Browser-Zurück und -Vorwärts wechseln zwischen den zuletzt geöffneten Bereichen.
+
 Über die Wortart-Auswahl gibt es zwei Übungsarten für Substantive: deutsche Vorgaben ins Lateinische übertragen sowie eine lateinische Form nach Substantiv, Kasus und Numerus bestimmen. Das Substantivrad zeigt die fünf Deklinationsklassen mit ausgewählten Formen aller fünf Deklinationen; der Genitiv Singular und das Genus gehören jeweils zum Lemma. Die Formen sind im Katalog vollständig hinterlegt, damit auch Neutra, i-Stämme und besondere Vokativformen nicht durch pauschale Endungsregeln verfälscht werden.

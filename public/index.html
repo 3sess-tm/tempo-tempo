@@ -5,7 +5,8 @@
 <meta name="color-scheme" content="light dark">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Mit tempo, tempo lateinische Verbformen und Substantive üben: interaktive Drehscheibe, Aufgaben, Vorlesen und Rangliste – spielerisch fit in Formen.">
-<meta name="theme-color" content="#efe6d3">
+<meta name="theme-color" content="#efe6d3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#211d19" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="canonical" href="https://tempo-tempo.cozmo-city.com/">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -89,16 +90,17 @@
         <button type="button" class="word-mode on" data-mode="verbs" aria-pressed="true">Verben</button>
         <button type="button" class="word-mode" data-mode="nouns" aria-pressed="false">Substantive</button>
       </div>
-      <div class="tabs" role="tablist">
-        <button class="tab on" data-tab="t1" role="tab"><span class="verb-tab-label">Deutsch → Latein</span><span class="noun-tab-label" hidden>Substantiv bilden</span></button>
-        <button class="tab" data-tab="t2" role="tab"><span class="verb-tab-label">Form bestimmen</span><span class="noun-tab-label" hidden>Kasus &amp; Numerus bestimmen</span></button>
-        <button class="tab" data-tab="t4" role="tab" id="tab4" hidden>Meine Verben</button>
-        <button class="tab" data-tab="shop" role="tab">Shop</button>
-        <button class="tab" data-tab="city" role="tab">Rom</button>
-        <button class="tab" data-tab="t5" role="tab">Rangliste</button>
-        <button class="tab" data-tab="t3" role="tab">Hilfe</button>
+      <div class="tabs" role="tablist" aria-label="Spielbereiche">
+        <button class="tab on" id="tab-t1" data-tab="t1" data-route="practice" role="tab" aria-selected="true"><span class="verb-tab-label">Deutsch → Latein</span><span class="noun-tab-label" hidden>Substantiv bilden</span></button>
+        <button class="tab" id="tab-t2" data-tab="t2" data-route="identify" role="tab" aria-selected="false"><span class="verb-tab-label">Form bestimmen</span><span class="noun-tab-label" hidden>Kasus &amp; Numerus bestimmen</span></button>
+        <button class="tab" id="tab4" data-tab="t4" data-route="my-verbs" role="tab" aria-selected="false" hidden>Meine Verben</button>
+        <button class="tab" id="tab-shop" data-tab="shop" data-route="shop" role="tab" aria-selected="false">Shop</button>
+        <button class="tab" id="tab-city" data-tab="city" data-route="rome" role="tab" aria-selected="false">Rom</button>
+        <button class="tab" id="tab-t5" data-tab="t5" data-route="leaderboard" role="tab" aria-selected="false">Rangliste</button>
+        <button class="tab" id="tab-t3" data-tab="t3" data-route="help" role="tab" aria-selected="false">Hilfe</button>
       </div>
-      <section id="t1" class="tp on">
+      <p class="screen-hint">Auf Mobilgeräten kannst du im Inhaltsbereich nach links oder rechts wischen.</p>
+      <section id="t1" class="tp on" role="tabpanel" aria-labelledby="tab-t1" tabindex="0">
         <div id="dprompt">–</div>
         <form id="dform" autocomplete="off">
           <div class="inrow">
@@ -113,13 +115,13 @@
         <div id="dstats" class="dstats"></div>
         <div id="tfilter" class="tfilter"></div>
       </section>
-      <section id="t2" class="tp">
+      <section id="t2" class="tp" role="tabpanel" aria-labelledby="tab-t2" tabindex="0">
         <div id="identifyHint" class="hint mini">Stelle Verb und Tempus auf der Scheibe so ein, dass die Form passt, dann „Prüfen“.</div>
         <div id="qform">–</div>
         <div class="row"><button id="qnew">Neue Form</button><button id="qcheck" class="sec">Prüfen</button><button id="qshow" class="sec">Lösung</button></div>
         <div id="qres"></div>
       </section>
-      <section id="t4" class="tp">
+      <section id="t4" class="tp" role="tabpanel" aria-labelledby="tab4" tabindex="0">
         <div id="mylist"></div>
         <details id="addbox" open><summary><b>＋ Neues Verb eingeben</b></summary>
           <label class="onelbl"><span>Stammformen und Bedeutung in <b>eine</b> Zeile:</span>
@@ -144,7 +146,7 @@
           <div class="row"><button type="button" id="copyCode" class="sec small">Code kopieren</button><button type="button" id="loadCode" class="sec small">Laden</button></div>
         </details>
       </section>
-      <section id="shop" class="tp">
+      <section id="shop" class="tp" role="tabpanel" aria-labelledby="tab-shop" tabindex="0">
         <div class="shop-head">
           <div><b>Dein Guthaben</b><div id="shopBalance" class="hint mini" aria-live="polite"></div></div>
           <span class="hint mini">Käufe bleiben in diesem Browser gespeichert.</span>
@@ -155,7 +157,7 @@
         <div id="skinShop" class="shop-grid"></div>
         <div id="shopMessage" class="hint mini" role="status" aria-live="polite"></div>
       </section>
-      <section id="city" class="tp">
+      <section id="city" class="tp" role="tabpanel" aria-labelledby="tab-city" tabindex="0">
         <div class="city-head">
           <div><b>Dein Rom</b><div id="cityStatus" class="hint mini" role="status" aria-live="polite"></div></div>
           <div class="city-currency"><span aria-hidden="true">🏛</span> <b id="cityCurrency">0 Gloria</b></div>
@@ -174,24 +176,29 @@
           <div id="cityMessage" class="hint mini" role="status" aria-live="polite"></div>
         </div>
       </section>
-      <section id="t5" class="tp">
+      <section id="t5" class="tp" role="tabpanel" aria-labelledby="tab-t5" tabindex="0">
         <div class="hint mini">Spiele mit einem <b>Spitznamen</b> (kein echter Name!) und dem Klassencode deiner Lehrkraft. Mit „Mitmachen“ meldest du dich an oder legst ein Konto an; auf anderen Geräten genügt derselbe Spitzname mit Klassencode.</div>
         <div class="inrow"><input id="lbName" class="txt" maxlength="16" placeholder="Spitzname" autocomplete="off"><input id="lbBoard" class="txt" maxlength="24" placeholder="Klassencode" autocomplete="off"></div>
         <div class="row"><button type="button" id="lbSave">Mitmachen</button><button type="button" id="lbRefresh" class="sec">Aktualisieren</button></div>
         <div id="lbStatus" class="hint mini"></div>
         <ol id="lbList" class="lbl"></ol>
       </section>
-      <section id="t3" class="tp hint">
+      <section id="t3" class="tp hint" role="tabpanel" aria-labelledby="tab-t3" tabindex="0">
         <button type="button" class="sec small introbtn" id="introagain">✦ Einführung nochmal zeigen</button>
         <p>Das Fenster bleibt oben auf 12 Uhr. <b>Mittleren Ring</b> drehen = Wort wählen, <b>äußeren Ring</b> drehen = Tempus oder Kasus wählen. Die Zeilen im Fenster zeigen Personen oder Numeri; eine Form antippen deckt sie auf.</p>
         <p><b>Substantive:</b> Oben zwischen Verben und Substantiven wechseln. Der mittlere Ring wählt ein Nomen, der äußere den Kasus, die Zeilen Singular oder Plural. Nominativ und Genitiv Singular zeigen Lemma und Deklination; bei Neutra sind Nominativ, Akkusativ und Vokativ gleich.</p>
         <p>Vorlesen: Beim Aufdecken wird genau die angetippte Form gesprochen, bei „Lösung zeigen“ die Lösung. Vorlesen ist zu Beginn aus und spricht nur, wenn oben „weiblich“ oder „männlich“ gewählt ist; dann wiederholt 🔊 eine Form. Aussprache klassisch: c wie k, v wie w.</p><p>Die Formen im Fenster sind verdeckt – erst überlegen, dann Zeile antippen zum Aufdecken. Nochmal antippen verdeckt sie wieder. Darunter: „alle aufdecken“ und „alle verdecken“.</p>        <p>Münzen: aus dem Kopf mit allen Längen getippt 4 Asse · ohne Längen oder nach dem Aufdecken 2 Asse · auf der Scheibe die richtige Zeile gleich beim ersten Mal angetippt 2 Asse, nach Probieren 1 As · Form bestimmt 2 Asse · nach „Lösung zeigen“ keine Münze. Du hast 3 Versuche mit Hinweisen; ist auch der 4. falsch, kommt die Lösung und pro Fehlversuch wird 1 As abgezogen (also 4 Asse). Im <b>Shop</b> kannst du weitere Räder und Skins mit Assen kaufen. Im Reiter <b>Rom</b> wählst du einen Stadtbezirk und investierst dort Baumaterial. 20 Materialien (80 Asse) bauen ein Haus und bringen 1 Gloria; besondere Gebäude müssen erst freigeschaltet und dann mit Materialien sowie 5 Gloria errichtet werden. Häuser erzeugen außerdem 1 As Steuer pro Stunde, aber nur solange die Seite sichtbar geöffnet ist. Käufe bleiben in diesem Browser gespeichert; die Rangliste zählt weiterhin alle verdienten Asse.</p>
+        <div id="nounGrammar" hidden>
+          <p>Ein lateinisches Substantiv hat Kasus, Numerus und Genus. Der Genitiv Singular hilft, die Deklination und den Stamm zu erkennen. Die Tabelle zeigt das vollständige Paradigma des gerade auf der Scheibe gewählten Substantivs.</p>
+          <div id="nounParadigm"></div>
+        </div>
         <div class="vbox"><b>Stimme wählen</b>
           <div class="row" style="align-items:center"><select id="vlist"></select><button type="button" id="vtest" class="sec small" style="margin-top:0">angetippte Form anhören</button></div>
           <div class="row" style="align-items:center;margin-top:6px"><span class="hint">Klang:</span><button type="button" class="sec small kbtn" data-k="heiter" style="margin-top:0">heiter &amp; jung</button><button type="button" class="sec small kbtn" data-k="ruhig" style="margin-top:0">ruhig</button></div>
           <div id="vcount" class="hint mini"></div>
           <div class="hint mini">★ = hochwertige Stimme. Sanftere Stimmen auf dem iPad: Einstellungen › Bedienungshilfen › Gesprochene Inhalte › Stimmen › Deutsch – dort z. B. „Anna (Premium)“ oder „Markus (Erweitert)“ laden.</div>
         </div>
+        <div id="verbGrammar">
         <div class="tzt">
       <div class="tzh g">Präsensstamm <small>grün</small></div><div class="tzh r">Perfektstamm <small>rot</small></div>
       <div class="tzc"><b>Präsens</b><span class="none">kein Tempuszeichen</span><span class="pe">Personalendungen:</span><span class="pe2">Sg. <span class="k-E">-ō/-m, -s, -t</span></span><span class="pe2">Pl. <span class="k-E">-mus, -tis, -nt</span></span></div>
@@ -211,6 +218,7 @@
       <div class="tzf"><span class="chip k-P">rot</span> = Perfektzeichen · <span class="chip k-T imp">blau</span> = Vergangenheit · <span class="chip k-T fut">gelb</span> = Zukunft · Das Tempuszeichen steht zwischen <b>Stamm</b> und <span class="k-E"><b>Endung</b></span>: rogā-<span class="k-T imp">ba</span>-<span class="k-E">m</span>, rogāv-<span class="k-T imp">era</span>-<span class="k-E">m</span></div>
     </div>
         <div class="hint mini" style="margin-top:6px"><span class="k-S">Stamm</span> · <span class="k-B">Bindevokal (i, u)</span> · <span class="k-E"><b>Personalendung</b></span></div>
+    </div>
       </section>
     </div>
     <div class="card purse">
@@ -219,8 +227,8 @@
       <div id="ptotal" class="hint"></div>
       <div class="hint rates">4 Asse = 1 Sesterz · 4 Sesterzen = 1 Denar · 25 Denare = 1 Aureus</div>
       <button id="preset" class="sec small">Kasse leeren</button>
-      <form action="mailto:latin@cozmo-city.com?subject=Delete%20user%20data&body=Hi%20there!%20I%20have%20played%20your%20awesome%20little%20latin%20game%2C%20but%20now%20I%20would%20like%20my%20score%20to%20be%20taken%20from%20the%20leaderboard.%0ASincerely%2C%0A%5Bnickname%5D" method="get">
-        <button id="reset" class="sec small" type="submit">Daten löschen</button>
+      <form action="mailto:latin@cozmo-city.com?subject=Anfrage%20zur%20L%C3%B6schung%20meines%20Spielkontos&body=Hallo%2C%0Abitte%20l%C3%B6scht%20mein%20Ranglisten-%20und%20Stadtkonto.%0A%0AKlassencode%3A%20%5Bbitte%20eintragen%5D%0ASpitzname%3A%20%5Bbitte%20eintragen%5D" method="get">
+        <button id="reset" class="sec small" type="submit" title="Öffnet dein E-Mail-Programm und erstellt eine Löschanfrage">Datenlöschung per E-Mail anfragen</button>
       </form>
       <div id="shint" class="hint" style="display:none;margin-top:6px">Der Browser hat den Ton blockiert. Tippe einmal auf „Ton an“ und prüfe die Lautstärke.</div>
     </div>

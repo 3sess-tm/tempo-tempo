@@ -40,6 +40,26 @@ function readShopState(){
       activeSkin: ownedSkins.includes(saved.activeSkin)?saved.activeSkin:'pergament'};
   }catch(e){ return {ownedWheels:['starter'],ownedSkins:['pergament'],activeWheel:'starter',activeSkin:'pergament'}; }
 }
+function renderNounParadigm(v){
+  const noun=D.nouns[v], wrap=document.createElement('div'), table=document.createElement('table');
+  wrap.className='noun-paradigm-wrap'; table.className='noun-paradigm';
+  const head=document.createElement('thead'), headRow=document.createElement('tr');
+  ['Kasus','Singular','Plural'].forEach(label=>{const cell=document.createElement('th');cell.textContent=label;headRow.append(cell);});
+  head.append(headRow); table.append(head);
+  const body=document.createElement('tbody');
+  CASES.forEach((caseName,c)=>{
+    const row=document.createElement('tr'), caseCell=document.createElement('th');
+    caseCell.scope='row'; caseCell.textContent=caseName; row.append(caseCell);
+    for(let n=0;n<2;n++){
+      const cell=document.createElement('td'), latin=document.createElement('span'), german=document.createElement('small');
+      latin.textContent=noun.forms[n][c]; german.textContent=noun.german[n][c];
+      cell.append(latin,german); row.append(cell);
+    }
+    body.append(row);
+  });
+  table.append(body); wrap.append(table);
+  document.getElementById('nounParadigm').replaceChildren(wrap);
+}
 let shopState = readShopState();
 let palette = wheelCatalog.skins.find(item=>item.id===shopState.activeSkin).palette;
 let activeWheelId = 'starter';
@@ -158,6 +178,7 @@ function readout(){
   document.getElementById('readout').innerHTML = `${itemLabel} <span class="kj">${categoryLabel}</span> · <span class="t ${tc}">${D.tenses[t]}</span>`;
   const mn = t===2 && mnem(v);
   const wheelLabel=D.isNoun ? `${D.nouns[v].nom}, ${D.nouns[v].gen} (${D.nouns[v].gender})` : D.verbs[v].split(' ')[0];
+  if (D.isNoun) renderNounParadigm(v);
   document.getElementById('whead').innerHTML = `${wheelLabel} · <span class="t ${tc}">${D.tenses[t]}</span>` +
      (!D.isNoun && mn ? `<div class="mnem"><span class="mico">${mn.ico}</span> ${mn.short}</div>` : '') + (!D.isNoun && t>=3 ? pfLine(v) : '');
   const cd = document.getElementById('cdisc'); if (cd) cd.setAttribute('fill', D.isNoun ? palette.paper : t<3 ? palette.presentDisc : palette.perfectDisc);
@@ -570,16 +591,90 @@ document.getElementById('dshow').onclick = ()=>{
   showSolution(taskForms(dq)[0]);
 };
 
-// ---------- Layout: alles auf einen Bildschirm ----------
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
-  document.querySelectorAll('.tp').forEach(x=>x.classList.toggle('on',x.id===b.dataset.tab));
-  document.body.classList.toggle('editing', b.dataset.tab==='t4');
-  document.body.classList.toggle('city-mode', b.dataset.tab==='city');
-  if (b.dataset.tab==='t5') lbLoad();
-  if (b.dataset.tab==='shop') renderShop();
-  if (b.dataset.tab==='city') cityLoad();
+// ---------- Screens, URLs und mobile Wisch-Navigation ----------
+const screenTabs=[...document.querySelectorAll('.tab')];
+const routeAliases={t1:'practice',t2:'identify',t4:'my-verbs',t5:'leaderboard',t3:'help'};
+function visibleScreenTabs(){ return screenTabs.filter(tab=>!tab.hidden); }
+function tabForRoute(route){
+  return screenTabs.find(tab=>tab.dataset.route===route || tab.dataset.tab===route || routeAliases[tab.dataset.tab]===route);
+}
+function activateScreen(tab,{writeHistory=false,focus=false}={}){
+  if (!tab || tab.hidden) return;
+  const previous=document.querySelector('.tab.on');
+  if (previous!==tab){
+    const tabs=visibleScreenTabs();
+    const direction=tabs.indexOf(tab)>=tabs.indexOf(previous)?1:-1;
+    document.documentElement.style.setProperty('--screen-in-x',`${direction*14}px`);
+    document.querySelectorAll('.tab').forEach(button=>{
+      const active=button===tab;
+      button.classList.toggle('on',active);
+      button.setAttribute('aria-selected',String(active));
+      button.tabIndex=active?0:-1;
+    });
+    document.querySelectorAll('.tp').forEach(screen=>{
+      const active=screen.id===tab.dataset.tab;
+      screen.classList.toggle('on',active);
+      if (active){
+        screen.classList.remove('screen-enter');
+        void screen.offsetWidth;
+        screen.classList.add('screen-enter');
+      }
+    });
+    document.body.classList.toggle('editing',tab.dataset.tab==='t4');
+    document.body.classList.toggle('city-mode',tab.dataset.tab==='city');
+    if (tab.dataset.tab==='t5') lbLoad();
+    if (tab.dataset.tab==='shop') renderShop();
+    if (tab.dataset.tab==='city') cityLoad();
+  }
+  const route=tab.dataset.route;
+  if (writeHistory && location.hash!==`#${route}`) history.pushState(null,'',`#${route}`);
+  if (focus) tab.focus();
+}
+screenTabs.forEach(tab=>{
+  tab.setAttribute('aria-controls',tab.dataset.tab);
+  tab.tabIndex=tab.classList.contains('on')?0:-1;
+  tab.addEventListener('click',()=>activateScreen(tab,{writeHistory:true}));
+  tab.addEventListener('keydown',event=>{
+    const tabs=visibleScreenTabs(), index=tabs.indexOf(tab);
+    let target;
+    if (event.key==='ArrowRight') target=tabs[(index+1)%tabs.length];
+    else if (event.key==='ArrowLeft') target=tabs[(index-1+tabs.length)%tabs.length];
+    else if (event.key==='Home') target=tabs[0];
+    else if (event.key==='End') target=tabs[tabs.length-1];
+    if (target){ event.preventDefault(); activateScreen(target,{writeHistory:true,focus:true}); }
+  });
 });
+function activateScreenFromHash(){
+  const route=location.hash.slice(1);
+  const tab=route ? tabForRoute(route) : screenTabs.find(item=>item.dataset.tab==='t1');
+  if (!tab || tab.hidden) return;
+  activateScreen(tab);
+  if (!route && history.replaceState) history.replaceState(null,'',`${location.pathname}${location.search}#${tab.dataset.route}`);
+}
+window.addEventListener('hashchange',activateScreenFromHash);
+window.addEventListener('popstate',activateScreenFromHash);
+let swipeStart=null;
+const screenPanel=document.querySelector('#panel .ex');
+screenPanel.addEventListener('pointerdown',event=>{
+  const target=event.target;
+  if (event.pointerType!=='touch' || !target.closest('.tp.on') ||
+      target.closest('button,input,textarea,select,a,[contenteditable="true"]')) {
+    swipeStart=null;
+    return;
+  }
+  swipeStart={x:event.clientX,y:event.clientY};
+});
+screenPanel.addEventListener('pointerup',event=>{
+  if (!swipeStart) return;
+  const dx=event.clientX-swipeStart.x, dy=event.clientY-swipeStart.y;
+  swipeStart=null;
+  if (Math.abs(dx)<64 || Math.abs(dx)<Math.abs(dy)*1.35) return;
+  const tabs=visibleScreenTabs(), active=tabs.findIndex(tab=>tab.classList.contains('on'));
+  const next=tabs[active+(dx<0?1:-1)];
+  if (next) activateScreen(next,{writeHistory:true});
+});
+screenPanel.addEventListener('pointercancel',()=>{swipeStart=null;});
+// ---------- Layout ----------
 function setGameMode(mode){
   if (mode!=='verbs' && mode!=='nouns' || mode===gameMode) return;
   if (gameMode==='verbs') verbData=D;
@@ -603,6 +698,8 @@ function setGameMode(mode){
     ? 'Stelle Substantiv und Kasus auf der Scheibe ein; wähle Singular oder Plural in der passenden Zeile.'
     : 'Stelle Verb und Tempus auf der Scheibe so ein, dass die Form passt, dann „Prüfen“.';
   document.getElementById('tfilter').setAttribute('aria-label', D.isNoun?'Kasusfilter':'Tempusfilter');
+  document.getElementById('nounGrammar').hidden=!D.isNoun;
+  document.getElementById('verbGrammar').hidden=D.isNoun;
   buildWheel();
   rot={A:0,B:0}; rightRow=null; revealed.clear(); shownKey=''; sel=-1;
   buildTF(); renderStats(); dnew(false); document.getElementById('qnew').click(); render();
@@ -790,7 +887,7 @@ document.getElementById('wspeak').addEventListener('click', ()=>{
 })();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(()=>fitWin());
 
-// ---------- Einführung beim ersten Öffnen ----------
+// ---------- Einführung nur beim ersten Öffnen ----------
 const INTRO_KEY = 'drehscheibe-intro-' + document.title;
 function showIntro(){
   const box = document.getElementById('intro'); box.hidden = false;
@@ -811,7 +908,9 @@ document.getElementById('introagain').onclick = showIntro;
 const ib = document.getElementById('introBtn'); if (ib) ib.onclick = showIntro;
 document.getElementById('intro').addEventListener('click', e=>{ if (e.target.id==='intro') closeIntro(); });
 document.addEventListener('keydown', e=>{ if (e.key==='Escape' && !document.getElementById('intro').hidden) closeIntro(); });
-showIntro();   // erscheint bei jedem Öffnen
+try{
+  if (!localStorage.getItem(INTRO_KEY)) showIntro();
+}catch(e){ showIntro(); }
 
 // ================= Eigene Verben =================
 // Bildet aus den Stammformen alle Formen (regelmäßige Verben der a-, e-, i-, kons. und gemischten Konjugation)
@@ -1230,7 +1329,7 @@ const CITY_SITE_NAMES = {
 };
 let cityState = null, cityReady = false, cityRequestId = 0;
 let citySelectedSite = '';
-let cityActiveMs = 0, cityActiveAccount = '';
+let cityTaxProgress = 0, cityActiveAccount = '';
 const cityStatus = document.getElementById('cityStatus');
 const cityMessage = document.getElementById('cityMessage');
 function citySignedIn(){ return !!(lbCfg.name && lbCfg.board && lbCfg.id); }
@@ -1247,9 +1346,11 @@ function cityUpdateState(data){
   if (cityActiveAccount!==lbCfg.id){
     cityActiveAccount=lbCfg.id;
     try{
-      const saved=Number(localStorage.getItem(`tempo-city-active-${cityActiveAccount}`));
-      cityActiveMs=Number.isFinite(saved)&&saved>=0?saved%3600000:0;
-    }catch(e){ cityActiveMs=0; }
+      const saved=Number(localStorage.getItem(`tempo-city-tax-${cityActiveAccount}`));
+      if(Number.isFinite(saved)&&saved>=0) cityTaxProgress=saved%3600000;
+      else cityTaxProgress=0;
+      localStorage.removeItem(`tempo-city-active-${cityActiveAccount}`);
+    }catch(e){ cityTaxProgress=0; }
   }
   cityRender();
 }
@@ -1279,7 +1380,7 @@ function cityRender(){
   const houses=CITY_HOUSING_SITES.reduce((sum,site)=>sum+Math.floor(cityState.sites[site]/CITY_HOUSE_MATERIALS),0);
   document.getElementById('cityCurrency').textContent=`${cityState.currency} Gloria`;
   document.getElementById('cityHouseCount').textContent=String(houses);
-  document.getElementById('cityTaxRate').textContent=`${houses} Asse`;
+  document.getElementById('cityTaxRate').textContent=`${houses} ${houses===1?'As':'Asse'}/Stunde`;
   const totalSites=[...CITY_HOUSING_SITES,...CITY_BUILDINGS.map(building=>building.id)];
   totalSites.forEach(site=>{
     const marker=document.querySelector(`[data-city-site="${site}"]`);
@@ -1346,6 +1447,10 @@ async function cityLoad(){
     cityReady=false; cityState=null; cityStatus.textContent='Noch nicht angemeldet.';
     cityRender(); return;
   }
+  if (cityActiveAccount && cityActiveAccount!==lbCfg.id){
+    cityReady=false;
+    cityState=null;
+  }
   cityStatus.textContent='Rom wird geladen …';
   try{
     const data=await cityCall({},`?board=${encodeURIComponent(lbCfg.board)}&id=${encodeURIComponent(lbCfg.id)}`);
@@ -1399,18 +1504,18 @@ document.getElementById('cityMapSites').addEventListener('click',event=>{
 document.getElementById('cityMaterials').addEventListener('input',()=>cityRenderSelection());
 function cityPersistActivity(){
   if (!cityActiveAccount) return;
-  try{ localStorage.setItem(`tempo-city-active-${cityActiveAccount}`,String(cityActiveMs%3600000)); }catch(e){}
+  try{ localStorage.setItem(`tempo-city-tax-${cityActiveAccount}`,String(cityTaxProgress%3600000)); }catch(e){}
 }
 let cityLastTick=performance.now();
 function cityTick(){
   const now=performance.now(), elapsed=Math.min(15000,Math.max(0,now-cityLastTick));
   cityLastTick=now;
-  if (!document.hidden && cityReady && cityState && citySignedIn()){
-    cityActiveMs+=elapsed;
+  if (!document.hidden && cityReady && cityState && citySignedIn() && cityActiveAccount===lbCfg.id){
     const houses=CITY_HOUSING_SITES.reduce((sum,site)=>sum+Math.floor(cityState.sites[site]/CITY_HOUSE_MATERIALS),0);
-    const earnedTax=Math.floor(cityActiveMs/3600000)*houses;
+    cityTaxProgress+=elapsed*houses;
+    const earnedTax=Math.floor(cityTaxProgress/3600000);
     if (earnedTax>0){
-      cityActiveMs%=3600000;
+      cityTaxProgress%=3600000;
       purse+=earnedTax; earned+=earnedTax;
       try{ localStorage.setItem('drehscheibe-asse',purse); localStorage.setItem('drehscheibe-verdient',earned); }catch(e){}
       lbDirty(); renderPurse();
@@ -1498,5 +1603,6 @@ renderPurse();
 if (citySignedIn()) cityLoad();
 if (shopState.activeWheel!=='starter') activateWheel(shopState.activeWheel,false);
 else { dnew(false); document.getElementById('qnew').click(); render(); }
+activateScreenFromHash();
 
 })));
