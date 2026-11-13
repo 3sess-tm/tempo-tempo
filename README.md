@@ -16,6 +16,14 @@ Die lokale Vorschau ist normalerweise unter `http://localhost:8787` erreichbar. 
 npx wrangler d1 execute tempo-lb --local --file=./schema.sql
 ```
 
+Wenn eine Datenbank bereits mit dem vorherigen Schema läuft, einmalig die Stadterweiterung einspielen:
+
+```sh
+npx wrangler d1 execute tempo-lb --local --file=./migrations/0002_city.sql
+```
+
+Für eine bestehende Remote-Datenbank denselben Befehl mit `--remote` statt `--local` ausführen. Die Migration fügt den Materialfortschritt und den Gloria-Kontostand hinzu; sie darf pro Datenbank nur einmal ausgeführt werden. Neu angelegte Datenbanken erhalten beide Spalten direkt über `schema.sql`.
+
 ## Cloudflare einrichten und veröffentlichen
 
 Voraussetzung sind ein Cloudflare-Konto und eine Anmeldung bei Wrangler:
@@ -36,8 +44,9 @@ npx wrangler d1 create tempo-lb
 
 ## Projektdateien
 
-- `worker.js`: Worker-Endpunkt für die Rangliste
+- `worker.js`: Worker-Endpunkte für Rangliste und Stadtbau
 - `schema.sql`: D1-Schema
+- `migrations/0002_city.sql`: einmalige Migration für vorhandene D1-Datenbanken
 - `wrangler.toml`: Worker-, Assets- und D1-Konfiguration
 - `public/index.html`: HTML-Grundgerüst
 - `public/app.css`: Stylesheet
@@ -45,6 +54,8 @@ npx wrangler d1 create tempo-lb
 - `public/data/wheels.json`: Daten des kostenlosen Grundrads
 - `public/data/shop.json`: kaufbare Radpakete und Skin-Paletten
 - `public/data/nouns.json`: Substantive mit vollständigen Kasus- und Numerusformen
+
+Im Reiter **Rom** kaufen angemeldete Spieler Baumaterial mit Assen: 20 Materialien (80 Asse) ergeben ein Haus. Fertige Häuser geben je 1 Gloria für besondere Gebäude und erzeugen je 1 As Steuer pro Stunde, solange die Seite sichtbar geöffnet ist. Fortschritt und Gloria werden im Ranglisten-Konto gespeichert; neue Datenbanken nutzen das vollständige Schema, bestehende Datenbanken benötigen die Migration oben.
 
 Der Shop bietet drei zusätzliche Verb-Räder und drei kaufbare Skins. Käufe und Ausrüstung werden lokal im Browser gespeichert und sind nicht zwischen Geräten synchronisiert. Bei der Rangliste meldet „Mitmachen“ mit Klassencode und Spitzname am vorhandenen Konto an oder legt ein neues an. Bei einer erneuten Anmeldung wird das Asse-Guthaben mit dem gespeicherten Ranglistenstand synchronisiert; lokaler Shop-Besitz bleibt auf das jeweilige Gerät beschränkt. Ausgaben senken nur das verfügbare Guthaben; die Rangliste zählt weiterhin alle verdienten Asse.
 

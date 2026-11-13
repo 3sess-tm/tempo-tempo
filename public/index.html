@@ -57,6 +57,7 @@
         <button class="tab" data-tab="t2" role="tab"><span class="verb-tab-label">Form bestimmen</span><span class="noun-tab-label" hidden>Kasus &amp; Numerus bestimmen</span></button>
         <button class="tab" data-tab="t4" role="tab" id="tab4" hidden>Meine Verben</button>
         <button class="tab" data-tab="shop" role="tab">Shop</button>
+        <button class="tab" data-tab="city" role="tab">Rom</button>
         <button class="tab" data-tab="t5" role="tab">Rangliste</button>
         <button class="tab" data-tab="t3" role="tab">Hilfe</button>
       </div>
@@ -117,6 +118,31 @@
         <div id="skinShop" class="shop-grid"></div>
         <div id="shopMessage" class="hint mini" role="status" aria-live="polite"></div>
       </section>
+      <section id="city" class="tp">
+        <div class="city-head">
+          <div><b>Dein Rom</b><div id="cityStatus" class="hint mini" role="status" aria-live="polite"></div></div>
+          <div class="city-currency"><span aria-hidden="true">🏛</span> <b id="cityCurrency">0 Gloria</b></div>
+        </div>
+        <div id="cityAccount" class="hint mini"></div>
+        <div id="cityGame" hidden>
+          <div class="city-overview">
+            <div class="city-stat"><b id="cityHouseCount">0</b><span>Häuser</span></div>
+            <div class="city-stat"><b id="cityTaxRate">0 Asse</b><span>Steuern pro Stunde auf dieser Seite</span></div>
+          </div>
+          <div class="city-progress">
+            <div class="city-progress-label"><b>Nächstes Haus</b><span id="cityProgressText">0 / 20 Materialien</span></div>
+            <div class="city-bar" role="progressbar" aria-label="Baufortschritt des nächsten Hauses" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0"><i id="cityProgressBar"></i></div>
+          </div>
+          <div class="city-invest">
+            <label for="cityMaterials">Baumaterial kaufen <small>(4 Asse pro Material)</small></label>
+            <div class="row"><input id="cityMaterials" class="txt" type="number" min="1" max="100" step="1" value="1"><button type="button" id="cityInvest">Material investieren</button></div>
+            <div class="hint mini">20 Materialien bauen ein Haus (80 Asse). Jedes fertige Haus bringt 1 Gloria und später 1 As pro Stunde, solange diese Seite geöffnet und sichtbar ist.</div>
+          </div>
+          <h3 class="city-section-title">Besondere Gebäude</h3>
+          <div id="cityBuildings" class="city-buildings"></div>
+          <div id="cityMessage" class="hint mini" role="status" aria-live="polite"></div>
+        </div>
+      </section>
       <section id="t5" class="tp">
         <div class="hint mini">Spiele mit einem <b>Spitznamen</b> (kein echter Name!) und dem Klassencode deiner Lehrkraft. Mit „Mitmachen“ meldest du dich an oder legst ein Konto an; auf anderen Geräten genügt derselbe Spitzname mit Klassencode.</div>
         <div class="inrow"><input id="lbName" class="txt" maxlength="16" placeholder="Spitzname" autocomplete="off"><input id="lbBoard" class="txt" maxlength="24" placeholder="Klassencode" autocomplete="off"></div>
@@ -128,7 +154,7 @@
         <button type="button" class="sec small introbtn" id="introagain">✦ Einführung nochmal zeigen</button>
         <p>Das Fenster bleibt oben auf 12 Uhr. <b>Mittleren Ring</b> drehen = Wort wählen, <b>äußeren Ring</b> drehen = Tempus oder Kasus wählen. Die Zeilen im Fenster zeigen Personen oder Numeri; eine Form antippen deckt sie auf.</p>
         <p><b>Substantive:</b> Oben zwischen Verben und Substantiven wechseln. Der mittlere Ring wählt ein Nomen, der äußere den Kasus, die Zeilen Singular oder Plural. Nominativ und Genitiv Singular zeigen Lemma und Deklination; bei Neutra sind Nominativ, Akkusativ und Vokativ gleich.</p>
-        <p>Vorlesen: Beim Aufdecken wird genau die angetippte Form gesprochen, bei „Lösung zeigen“ die Lösung. Vorlesen ist zu Beginn aus und spricht nur, wenn oben „weiblich“ oder „männlich“ gewählt ist; dann wiederholt 🔊 eine Form. Aussprache klassisch: c wie k, v wie w.</p><p>Die Formen im Fenster sind verdeckt – erst überlegen, dann Zeile antippen zum Aufdecken. Nochmal antippen verdeckt sie wieder. Darunter: „alle aufdecken“ und „alle verdecken“.</p><p>Münzen: aus dem Kopf mit allen Längen getippt 4 Asse · ohne Längen oder nach dem Aufdecken 2 Asse · auf der Scheibe die richtige Zeile gleich beim ersten Mal angetippt 2 Asse, nach Probieren 1 As · Form bestimmt 2 Asse · nach „Lösung zeigen“ keine Münze. Du hast 3 Versuche mit Hinweisen; ist auch der 4. falsch, kommt die Lösung und pro Fehlversuch wird 1 As abgezogen (also 4 Asse). Im <b>Shop</b> kannst du weitere Räder und Skins mit Assen kaufen. Käufe bleiben in diesem Browser gespeichert; die Rangliste zählt weiterhin alle verdienten Asse.</p>
+        <p>Vorlesen: Beim Aufdecken wird genau die angetippte Form gesprochen, bei „Lösung zeigen“ die Lösung. Vorlesen ist zu Beginn aus und spricht nur, wenn oben „weiblich“ oder „männlich“ gewählt ist; dann wiederholt 🔊 eine Form. Aussprache klassisch: c wie k, v wie w.</p><p>Die Formen im Fenster sind verdeckt – erst überlegen, dann Zeile antippen zum Aufdecken. Nochmal antippen verdeckt sie wieder. Darunter: „alle aufdecken“ und „alle verdecken“.</p>        <p>Münzen: aus dem Kopf mit allen Längen getippt 4 Asse · ohne Längen oder nach dem Aufdecken 2 Asse · auf der Scheibe die richtige Zeile gleich beim ersten Mal angetippt 2 Asse, nach Probieren 1 As · Form bestimmt 2 Asse · nach „Lösung zeigen“ keine Münze. Du hast 3 Versuche mit Hinweisen; ist auch der 4. falsch, kommt die Lösung und pro Fehlversuch wird 1 As abgezogen (also 4 Asse). Im <b>Shop</b> kannst du weitere Räder und Skins mit Assen kaufen. Im Reiter <b>Rom</b> kosten 20 Baumaterialien (80 Asse) ein Haus. Jedes Haus bringt 1 Gloria; besondere Gebäude kosten Gloria. Häuser erzeugen außerdem 1 As Steuer pro Stunde, aber nur solange die Seite sichtbar geöffnet ist. Käufe bleiben in diesem Browser gespeichert; die Rangliste zählt weiterhin alle verdienten Asse.</p>
         <div class="vbox"><b>Stimme wählen</b>
           <div class="row" style="align-items:center"><select id="vlist"></select><button type="button" id="vtest" class="sec small" style="margin-top:0">angetippte Form anhören</button></div>
           <div class="row" style="align-items:center;margin-top:6px"><span class="hint">Klang:</span><button type="button" class="sec small kbtn" data-k="heiter" style="margin-top:0">heiter &amp; jung</button><button type="button" class="sec small kbtn" data-k="ruhig" style="margin-top:0">ruhig</button></div>
@@ -181,6 +207,7 @@
       <li><span class="ico">?</span><div><b>Übung „Form bestimmen“</b><br>Eine lateinische Form erscheint – stelle Wort und Tempus oder Kasus auf der Scheibe ein und prüfe.</div></li>
       <li><span class="ico">Aa</span><div><b>Substantive üben</b><br>Wechsle oben die Wortart: Der mittlere Ring wählt das Substantiv, der äußere den Kasus, die Zeilen Singular oder Plural. Der Genitiv Singular zeigt die Deklination.</div></li>
       <li><span class="ico">🪙</span><div><b>Münzen sammeln</b><br>Für jede richtige Antwort gibt es Asse – mit allen Längenstrichen aus dem Kopf sogar einen ganzen Sesterz. 4 Asse = 1 Sesterz, 4 Sesterzen = 1 Denar, 25 Denare = 1 Aureus. <b>Achtung:</b> 3 Versuche mit Hinweisen – ist auch der 4. falsch, kommt die Lösung und es werden 4 Asse abgezogen.</div></li>
+      <li><span class="ico">🏛</span><div><b>Rom erbauen</b><br>Im Reiter „Rom“ kaufst du Baumaterialien mit Assen. Je 20 Materialien entsteht ein Haus, das Gloria und Steuern bringt. Baue damit besondere Gebäude – die Steuern gibt es nur, solange die Seite geöffnet und sichtbar ist.</div></li>
     </ol>
     <div class="tzt">
       <div class="tzh g">Präsensstamm <small>grün</small></div><div class="tzh r">Perfektstamm <small>rot</small></div>

@@ -577,6 +577,7 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
   document.body.classList.toggle('editing', b.dataset.tab==='t4');
   if (b.dataset.tab==='t5') lbLoad();
   if (b.dataset.tab==='shop') renderShop();
+  if (b.dataset.tab==='city') cityLoad();
 });
 function setGameMode(mode){
   if (mode!=='verbs' && mode!=='nouns' || mode===gameMode) return;
@@ -1207,10 +1208,173 @@ lbEl('lbSave').onclick = async ()=>{
       if (!await lbFlush()) { lbStatus('Das Konto konnte nicht gespeichert werden. Bitte prüfe die Verbindung und versuche es erneut.'); return; }
       await lbLoad('Konto angelegt – dein Guthaben wurde gespeichert.');
     }
+    await cityLoad();
   }catch(e){
     lbStatus(e.message==='Ungültiger Kontostand.' ? e.message : 'Anmeldung nicht möglich. Bitte prüfe die Verbindung und versuche es erneut.');
   }finally{ button.disabled=false; }
 };
+const CITY_MATERIAL_PRICE = 4;
+const CITY_HOUSE_MATERIALS = 20;
+const CITY_BUILDINGS = [
+  { houses: 5, name: 'Forum Romanum' },
+  { houses: 15, name: 'Thermen' },
+  { houses: 30, name: 'Kolosseum' },
+  { houses: 50, name: 'Circus Maximus' },
+  { houses: 80, name: 'Pantheon' }
+];
+let cityState = null, cityReady = false, cityRequestId = 0;
+let cityActiveMs = 0, cityActiveAccount = '';
+const cityStatus = document.getElementById('cityStatus');
+const cityMessage = document.getElementById('cityMessage');
+function citySignedIn(){ return !!(lbCfg.name && lbCfg.board && lbCfg.id); }
+function cityUpdateState(data){
+  if (!Number.isSafeInteger(data.progress) || data.progress < 0 ||
+      !Number.isSafeInteger(data.currency) || data.currency < 0)
+    throw new Error('Ungültiger Stadtstand.');
+  cityState = {progress:data.progress,currency:data.currency};
+  cityReady = true;
+  if (cityActiveAccount!==lbCfg.id){
+    cityActiveAccount=lbCfg.id;
+    try{
+      const saved=Number(localStorage.getItem(`tempo-city-active-${cityActiveAccount}`));
+      cityActiveMs=Number.isFinite(saved)&&saved>=0?saved%3600000:0;
+    }catch(e){ cityActiveMs=0; }
+  }
+  cityRender();
+}
+async function cityCall(opts={}, query=''){
+  const response=await fetch('/api/city'+query,opts);
+  if (!/json/.test(response.headers.get('content-type')||'')) throw new Error('Die Stadt-API hat eine ungültige Antwort gesendet.');
+  const data=await response.json();
+  if (!response.ok) throw new Error(data.error==='balance'
+    ? 'Dein Ranglistenstand ist noch nicht aktuell. Bitte warte kurz und versuche es erneut.'
+    : data.error==='locked' ? 'Dieses Gebäude ist noch gesperrt oder Gloria fehlen.'
+    : 'Der Stadtstand konnte nicht gespeichert werden. Bitte versuche es erneut.');
+  return data;
+}
+function cityRender(){
+  const game=document.getElementById('cityGame');
+  const account=document.getElementById('cityAccount');
+  if (!citySignedIn() || !cityReady || !cityState){
+    game.hidden=true;
+    account.textContent=citySignedIn()?'':'Melde dich zuerst im Reiter „Rangliste“ mit Spitzname und Klassencode an. Dein Rom wird dann mit diesem Konto gespeichert.';
+    document.getElementById('cityCurrency').textContent='0 Gloria';
+    return;
+  }
+  account.textContent=`Gespeichert für ${lbCfg.name} · Material kostet ${CITY_MATERIAL_PRICE} Asse je Stück. Rätsel bringen deutlich schneller Asse.`;
+  game.hidden=false;
+  const houses=Math.floor(cityState.progress/CITY_HOUSE_MATERIALS);
+  const materialProgress=cityState.progress%CITY_HOUSE_MATERIALS;
+  const spent=Math.max(0,houses-cityState.currency);
+  const completedBuildings=Math.floor(spent/5);
+  document.getElementById('cityCurrency').textContent=`${cityState.currency} Gloria`;
+  document.getElementById('cityHouseCount').textContent=String(houses);
+  document.getElementById('cityTaxRate').textContent=`${houses} Asse`;
+  document.getElementById('cityProgressText').textContent=`${materialProgress} / ${CITY_HOUSE_MATERIALS} Materialien`;
+  document.getElementById('cityProgressBar').style.width=`${materialProgress/CITY_HOUSE_MATERIALS*100}%`;
+  const progressBar=document.querySelector('.city-bar');
+  progressBar.setAttribute('aria-valuenow',String(materialProgress));
+  document.getElementById('cityBuildings').innerHTML=CITY_BUILDINGS.map((building,index)=>{
+    const built=index<completedBuildings;
+    const available=index===completedBuildings && houses>=building.houses && cityState.currency>=5;
+    const locked=index>completedBuildings || houses<building.houses;
+    const status=built?'Fertig':available?'Kosten: 5 Gloria':locked?`Freischaltung ab ${building.houses} Häusern`:'Benötigt 5 Gloria';
+    return `<article class="city-building${built?' built':''}">
+      <div><b>${building.name}</b><span>${status}</span></div>
+      ${built?'<span class="city-check" aria-label="Fertig">✓</span>':`<button type="button" class="sec small" data-city-building="${index}" ${available?'':'disabled'}>Bauen</button>`}
+    </article>`;
+  }).join('');
+  if (completedBuildings>=CITY_BUILDINGS.length && houses>=CITY_BUILDINGS[CITY_BUILDINGS.length-1].houses)
+    document.getElementById('cityBuildings').insertAdjacentHTML('beforeend','<div class="city-complete">Rom ist vollendet! Die nächsten Städte kommen später.</div>');
+}
+async function cityLoad(){
+  const requestId=++cityRequestId;
+  if (!citySignedIn()){
+    cityReady=false; cityState=null; cityStatus.textContent='Noch nicht angemeldet.';
+    cityRender(); return;
+  }
+  cityStatus.textContent='Rom wird geladen …';
+  try{
+    const data=await cityCall({},`?board=${encodeURIComponent(lbCfg.board)}&id=${encodeURIComponent(lbCfg.id)}`);
+    if (requestId!==cityRequestId) return;
+    cityUpdateState(data);
+    cityStatus.textContent='';
+  }catch(error){
+    if (requestId!==cityRequestId) return;
+    cityReady=false;
+    cityStatus.textContent=error.message;
+    cityRender();
+  }
+}
+async function cityInvest(){
+  const input=document.getElementById('cityMaterials');
+  const materials=Number(input.value);
+  if (!Number.isSafeInteger(materials)||materials<1||materials>100){
+    cityMessage.textContent='Wähle 1 bis 100 Materialien.';
+    return;
+  }
+  const cost=materials*CITY_MATERIAL_PRICE;
+  if (purse<cost){ cityMessage.textContent=`Dafür fehlen noch ${priceText(cost-purse)}.`; return; }
+  const button=document.getElementById('cityInvest');
+  button.disabled=true; cityMessage.textContent='Material wird investiert …';
+  try{
+    if (!await lbFlush()) throw new Error('Dein Kontostand konnte nicht synchronisiert werden. Bitte versuche es erneut.');
+    const data=await cityCall({
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({board:lbCfg.board,id:lbCfg.id,action:'invest',progress:cityState.progress+materials})
+    });
+    purse-=cost;
+    try{ localStorage.setItem('drehscheibe-asse',purse); }catch(e){}
+    cityUpdateState(data);
+    const newHouses=Math.floor(data.progress/CITY_HOUSE_MATERIALS)-Math.floor((data.progress-materials)/CITY_HOUSE_MATERIALS);
+    cityMessage.textContent=newHouses
+      ? `${newHouses} ${newHouses===1?'Haus ist':'Häuser sind'} fertig – Gloria verdient!`
+      : `${materials} ${materials===1?'Material wurde':'Materialien wurden'} eingelagert.`;
+    renderPurse();
+  }catch(error){ cityMessage.textContent=error.message; }
+  finally{ button.disabled=false; }
+}
+async function cityBuild(index){
+  const buttons=document.querySelectorAll('[data-city-building]');
+  buttons.forEach(button=>button.disabled=true);
+  cityMessage.textContent='Gebäude wird errichtet …';
+  try{
+    const data=await cityCall({
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({board:lbCfg.board,id:lbCfg.id,action:'building',index})
+    });
+    cityUpdateState(data);
+    cityMessage.textContent=`${CITY_BUILDINGS[index].name} wurde fertiggestellt.`;
+  }catch(error){ cityMessage.textContent=error.message; cityRender(); }
+}
+document.getElementById('cityInvest').addEventListener('click',cityInvest);
+document.getElementById('cityBuildings').addEventListener('click',event=>{
+  const button=event.target.closest('[data-city-building]');
+  if (button) cityBuild(Number(button.dataset.cityBuilding));
+});
+function cityPersistActivity(){
+  if (!cityActiveAccount) return;
+  try{ localStorage.setItem(`tempo-city-active-${cityActiveAccount}`,String(cityActiveMs%3600000)); }catch(e){}
+}
+let cityLastTick=performance.now();
+function cityTick(){
+  const now=performance.now(), elapsed=Math.min(15000,Math.max(0,now-cityLastTick));
+  cityLastTick=now;
+  if (!document.hidden && cityReady && cityState && citySignedIn()){
+    cityActiveMs+=elapsed;
+    const houses=Math.floor(cityState.progress/CITY_HOUSE_MATERIALS);
+    const earnedTax=Math.floor(cityActiveMs/3600000)*houses;
+    if (earnedTax>0){
+      cityActiveMs%=3600000;
+      purse+=earnedTax; earned+=earnedTax;
+      try{ localStorage.setItem('drehscheibe-asse',purse); localStorage.setItem('drehscheibe-verdient',earned); }catch(e){}
+      lbDirty(); renderPurse();
+    }
+  }
+  cityPersistActivity();
+}
+setInterval(cityTick,5000);
+document.addEventListener('visibilitychange',cityTick);
 function priceText(price){ return `${price} ${price===1?'As':'Asse'}`; }
 function renderShop(){
   const wheelGrid = document.getElementById('wheelShop');
@@ -1286,6 +1450,7 @@ document.getElementById('wheelShop').addEventListener('click',event=>handleShopC
 document.getElementById('skinShop').addEventListener('click',event=>handleShopClick(event,'skin'));
 buildTF(); renderStats();
 renderPurse();
+if (citySignedIn()) cityLoad();
 if (shopState.activeWheel!=='starter') activateWheel(shopState.activeWheel,false);
 else { dnew(false); document.getElementById('qnew').click(); render(); }
 
