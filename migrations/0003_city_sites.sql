@@ -1,0 +1,1 @@
+ALTER TABLE scores ADD COLUMN city_sites TEXT NOT NULL DEFAULT '{}';

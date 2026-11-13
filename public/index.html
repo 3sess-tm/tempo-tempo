@@ -46,6 +46,43 @@
     <svg id="wsvg" viewBox="-100 -100 200 200" aria-hidden="true"><g id="gA"></g><g id="gB"></g><g id="gC"></g><g id="gFix"></g></svg>
     <div id="win"><div id="whead"></div><table id="wtab"></table><div id="wtr">Zeile antippen = Form aufdecken</div><div class="wbtns"><button id="wall" class="linkish" type="button">alle aufdecken</button><button id="wnone" class="linkish" type="button">alle verdecken</button></div><button id="wspeak" class="linkish" type="button">🔊 aufgedeckte vorlesen</button></div>
   </div>
+  <div id="cityMapShell" aria-label="Stadtplan von Rom">
+    <div class="city-map-heading"><span>ROMA</span><small>STADTPLAN · 753 A. CHR.</small></div>
+    <div class="city-map">
+      <svg class="city-map-art" viewBox="0 0 800 520" role="img" aria-label="Illustrierter Stadtplan mit Tiber, Straßen und Bauplätzen">
+        <defs><pattern id="cityGround" width="46" height="46" patternUnits="userSpaceOnUse"><rect width="46" height="46" fill="#d9d4a9"/><circle cx="7" cy="12" r="1.5" fill="#c5c293"/><circle cx="32" cy="35" r="1" fill="#c5c293"/></pattern></defs>
+        <rect width="800" height="520" rx="26" fill="url(#cityGround)"/>
+        <path d="M-25 185 C100 140 165 205 270 177 S440 146 520 184 680 226 825 165 L825 256 C700 308 625 257 523 238 S347 230 269 255 92 230 -25 278Z" fill="#83b9bd"/>
+        <path d="M-25 217 C90 181 174 237 267 212 S430 182 523 216 692 263 825 199" fill="none" stroke="#bce0d9" stroke-width="8" opacity=".8"/>
+        <g fill="none" stroke="#c4a66f" stroke-linecap="round">
+          <path d="M65 70 L190 450 M145 42 L294 477 M235 40 L380 490 M330 40 L435 485 M430 48 L505 465 M530 55 L595 430 M640 45 L690 415" stroke-width="12"/>
+          <path d="M32 100 L744 100 M25 145 L772 145 M35 298 L770 298 M48 355 L750 355 M85 415 L723 415" stroke-width="11"/>
+        </g>
+        <g fill="none" stroke="#efe2be" stroke-width="3" opacity=".9">
+          <path d="M65 70 L190 450 M145 42 L294 477 M235 40 L380 490 M330 40 L435 485 M430 48 L505 465 M530 55 L595 430 M640 45 L690 415"/>
+          <path d="M32 100 L744 100 M25 145 L772 145 M35 298 L770 298 M48 355 L750 355 M85 415 L723 415"/>
+        </g>
+        <g fill="#b9a77d" opacity=".65"><path d="M66 70h38v20H66z M119 106h19v28h-19z M174 307h33v28h-33z M288 316h28v23h-28z M442 310h35v27h-35z M618 310h25v30h-25z M527 108h28v22h-28z M697 106h29v26h-29z M93 367h33v24H93z M337 365h27v30h-27z M582 365h40v28h-40z"/></g>
+        <g fill="#71804f" opacity=".75"><circle cx="82" cy="324" r="16"/><circle cx="104" cy="334" r="12"/><circle cx="708" cy="280" r="15"/><circle cx="686" cy="269" r="11"/><circle cx="720" cy="384" r="17"/><circle cx="123" cy="455" r="15"/></g>
+        <text x="390" y="215" class="city-river-label">TIBERIS</text>
+        <text x="390" y="486" class="city-map-label">COLLES ROMANI</text>
+      </svg>
+      <div id="cityMapSites">
+        <button type="button" class="map-site residential" data-city-site="insula-1" style="--x:17%;--y:24%"><span class="map-icon">⌂</span><b>Vicus Tiber</b><small></small></button>
+        <button type="button" class="map-site residential" data-city-site="insula-2" style="--x:42%;--y:15%"><span class="map-icon">⌂</span><b>Subura</b><small></small></button>
+        <button type="button" class="map-site residential" data-city-site="insula-3" style="--x:74%;--y:25%"><span class="map-icon">⌂</span><b>Esquilin</b><small></small></button>
+        <button type="button" class="map-site residential" data-city-site="insula-4" style="--x:27%;--y:69%"><span class="map-icon">⌂</span><b>Aventin</b><small></small></button>
+        <button type="button" class="map-site residential" data-city-site="insula-5" style="--x:68%;--y:72%"><span class="map-icon">⌂</span><b>Palatin</b><small></small></button>
+        <button type="button" class="map-site landmark" data-city-site="forum" style="--x:53%;--y:45%"><span class="map-icon">▤</span><b>Forum</b><small></small></button>
+        <button type="button" class="map-site landmark" data-city-site="thermae" style="--x:83%;--y:48%"><span class="map-icon">♨</span><b>Thermen</b><small></small></button>
+        <button type="button" class="map-site landmark" data-city-site="colosseum" style="--x:43%;--y:78%"><span class="map-icon">◉</span><b>Kolosseum</b><small></small></button>
+        <button type="button" class="map-site landmark" data-city-site="circus" style="--x:13%;--y:51%"><span class="map-icon">▱</span><b>Circus</b><small></small></button>
+        <button type="button" class="map-site landmark" data-city-site="pantheon" style="--x:80%;--y:82%"><span class="map-icon">⌂</span><b>Pantheon</b><small></small></button>
+      </div>
+      <div class="city-map-compass" aria-hidden="true">N<br>✦</div>
+    </div>
+    <div class="city-map-key"><span><i class="map-key-locked"></i> unbebaut</span><span><i class="map-key-progress"></i> im Bau</span><span><i class="map-key-done"></i> fertig</span></div>
+  </div>
   <div class="panel" id="panel">
     <div class="card ex">
       <div class="word-modes" role="group" aria-label="Wortart wählen">
@@ -129,17 +166,11 @@
             <div class="city-stat"><b id="cityHouseCount">0</b><span>Häuser</span></div>
             <div class="city-stat"><b id="cityTaxRate">0 Asse</b><span>Steuern pro Stunde auf dieser Seite</span></div>
           </div>
-          <div class="city-progress">
-            <div class="city-progress-label"><b>Nächstes Haus</b><span id="cityProgressText">0 / 20 Materialien</span></div>
-            <div class="city-bar" role="progressbar" aria-label="Baufortschritt des nächsten Hauses" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0"><i id="cityProgressBar"></i></div>
-          </div>
           <div class="city-invest">
-            <label for="cityMaterials">Baumaterial kaufen <small>(4 Asse pro Material)</small></label>
-            <div class="row"><input id="cityMaterials" class="txt" type="number" min="1" max="100" step="1" value="1"><button type="button" id="cityInvest">Material investieren</button></div>
-            <div class="hint mini">20 Materialien bauen ein Haus (80 Asse). Jedes fertige Haus bringt 1 Gloria und später 1 As pro Stunde, solange diese Seite geöffnet und sichtbar ist.</div>
+            <label id="citySelectedLabel" for="cityMaterials">Bauplatz auswählen</label>
+            <div class="row"><input id="cityMaterials" class="txt" type="number" min="1" max="100" step="1" value="1"><button type="button" id="cityInvest" disabled>Material investieren</button></div>
+            <div id="citySelectedInfo" class="hint mini">Wähle einen Bauplatz auf der Karte. Baumaterial kostet 4 Asse pro Stück.</div>
           </div>
-          <h3 class="city-section-title">Besondere Gebäude</h3>
-          <div id="cityBuildings" class="city-buildings"></div>
           <div id="cityMessage" class="hint mini" role="status" aria-live="polite"></div>
         </div>
       </section>
@@ -154,7 +185,7 @@
         <button type="button" class="sec small introbtn" id="introagain">✦ Einführung nochmal zeigen</button>
         <p>Das Fenster bleibt oben auf 12 Uhr. <b>Mittleren Ring</b> drehen = Wort wählen, <b>äußeren Ring</b> drehen = Tempus oder Kasus wählen. Die Zeilen im Fenster zeigen Personen oder Numeri; eine Form antippen deckt sie auf.</p>
         <p><b>Substantive:</b> Oben zwischen Verben und Substantiven wechseln. Der mittlere Ring wählt ein Nomen, der äußere den Kasus, die Zeilen Singular oder Plural. Nominativ und Genitiv Singular zeigen Lemma und Deklination; bei Neutra sind Nominativ, Akkusativ und Vokativ gleich.</p>
-        <p>Vorlesen: Beim Aufdecken wird genau die angetippte Form gesprochen, bei „Lösung zeigen“ die Lösung. Vorlesen ist zu Beginn aus und spricht nur, wenn oben „weiblich“ oder „männlich“ gewählt ist; dann wiederholt 🔊 eine Form. Aussprache klassisch: c wie k, v wie w.</p><p>Die Formen im Fenster sind verdeckt – erst überlegen, dann Zeile antippen zum Aufdecken. Nochmal antippen verdeckt sie wieder. Darunter: „alle aufdecken“ und „alle verdecken“.</p>        <p>Münzen: aus dem Kopf mit allen Längen getippt 4 Asse · ohne Längen oder nach dem Aufdecken 2 Asse · auf der Scheibe die richtige Zeile gleich beim ersten Mal angetippt 2 Asse, nach Probieren 1 As · Form bestimmt 2 Asse · nach „Lösung zeigen“ keine Münze. Du hast 3 Versuche mit Hinweisen; ist auch der 4. falsch, kommt die Lösung und pro Fehlversuch wird 1 As abgezogen (also 4 Asse). Im <b>Shop</b> kannst du weitere Räder und Skins mit Assen kaufen. Im Reiter <b>Rom</b> kosten 20 Baumaterialien (80 Asse) ein Haus. Jedes Haus bringt 1 Gloria; besondere Gebäude kosten Gloria. Häuser erzeugen außerdem 1 As Steuer pro Stunde, aber nur solange die Seite sichtbar geöffnet ist. Käufe bleiben in diesem Browser gespeichert; die Rangliste zählt weiterhin alle verdienten Asse.</p>
+        <p>Vorlesen: Beim Aufdecken wird genau die angetippte Form gesprochen, bei „Lösung zeigen“ die Lösung. Vorlesen ist zu Beginn aus und spricht nur, wenn oben „weiblich“ oder „männlich“ gewählt ist; dann wiederholt 🔊 eine Form. Aussprache klassisch: c wie k, v wie w.</p><p>Die Formen im Fenster sind verdeckt – erst überlegen, dann Zeile antippen zum Aufdecken. Nochmal antippen verdeckt sie wieder. Darunter: „alle aufdecken“ und „alle verdecken“.</p>        <p>Münzen: aus dem Kopf mit allen Längen getippt 4 Asse · ohne Längen oder nach dem Aufdecken 2 Asse · auf der Scheibe die richtige Zeile gleich beim ersten Mal angetippt 2 Asse, nach Probieren 1 As · Form bestimmt 2 Asse · nach „Lösung zeigen“ keine Münze. Du hast 3 Versuche mit Hinweisen; ist auch der 4. falsch, kommt die Lösung und pro Fehlversuch wird 1 As abgezogen (also 4 Asse). Im <b>Shop</b> kannst du weitere Räder und Skins mit Assen kaufen. Im Reiter <b>Rom</b> wählst du einen Stadtbezirk und investierst dort Baumaterial. 20 Materialien (80 Asse) bauen ein Haus und bringen 1 Gloria; besondere Gebäude müssen erst freigeschaltet und dann mit Materialien sowie 5 Gloria errichtet werden. Häuser erzeugen außerdem 1 As Steuer pro Stunde, aber nur solange die Seite sichtbar geöffnet ist. Käufe bleiben in diesem Browser gespeichert; die Rangliste zählt weiterhin alle verdienten Asse.</p>
         <div class="vbox"><b>Stimme wählen</b>
           <div class="row" style="align-items:center"><select id="vlist"></select><button type="button" id="vtest" class="sec small" style="margin-top:0">angetippte Form anhören</button></div>
           <div class="row" style="align-items:center;margin-top:6px"><span class="hint">Klang:</span><button type="button" class="sec small kbtn" data-k="heiter" style="margin-top:0">heiter &amp; jung</button><button type="button" class="sec small kbtn" data-k="ruhig" style="margin-top:0">ruhig</button></div>

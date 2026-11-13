@@ -2,6 +2,12 @@
 
 Ein kleines Latein-Lernspiel mit einer interaktiven Konjugationsscheibe, Übungen, optional eigenen Verben und einer gemeinsamen Rangliste. Das Frontend wird als statische Cloudflare-Assets ausgeliefert; der Cloudflare Worker stellt die Ranglisten-API bereit und speichert sie in D1.
 
+Die Kartenplätze für Wohnviertel und Sonderbauten werden in `city_sites` gespeichert. Falls die vorherige Rom-Version bereits ausgerollt wurde, muss nach `0002_city.sql` auch die neue Migration einmalig auf die bestehende Datenbank angewendet werden:
+
+```sh
+npx wrangler d1 execute tempo-lb --remote --file=./migrations/0003_city_sites.sql
+```
+
 ## Lokal starten
 
 Voraussetzung ist Node.js. Wrangler wird bei den Befehlen über `npx` ausgeführt; eine separate Paketinstallation ist nicht nötig.
@@ -20,9 +26,10 @@ Wenn eine Datenbank bereits mit dem vorherigen Schema läuft, einmalig die Stadt
 
 ```sh
 npx wrangler d1 execute tempo-lb --local --file=./migrations/0002_city.sql
+npx wrangler d1 execute tempo-lb --local --file=./migrations/0003_city_sites.sql
 ```
 
-Für eine bestehende Remote-Datenbank denselben Befehl mit `--remote` statt `--local` ausführen. Die Migration fügt den Materialfortschritt und den Gloria-Kontostand hinzu; sie darf pro Datenbank nur einmal ausgeführt werden. Neu angelegte Datenbanken erhalten beide Spalten direkt über `schema.sql`.
+Bei einer Datenbank, auf der die erste Rom-Version schon läuft, nur die neue Migration ausführen: `npx wrangler d1 execute tempo-lb --remote --file=./migrations/0003_city_sites.sql`. Die Migrationen sind jeweils einmal pro Datenbank auszuführen. Neu angelegte Datenbanken erhalten alle Spalten direkt über `schema.sql`.
 
 ## Cloudflare einrichten und veröffentlichen
 
@@ -47,6 +54,7 @@ npx wrangler d1 create tempo-lb
 - `worker.js`: Worker-Endpunkte für Rangliste und Stadtbau
 - `schema.sql`: D1-Schema
 - `migrations/0002_city.sql`: einmalige Migration für vorhandene D1-Datenbanken
+- `migrations/0003_city_sites.sql`: einmalige Migration für gespeicherte Bauplätze auf der Rom-Karte
 - `wrangler.toml`: Worker-, Assets- und D1-Konfiguration
 - `public/index.html`: HTML-Grundgerüst
 - `public/app.css`: Stylesheet
@@ -55,7 +63,7 @@ npx wrangler d1 create tempo-lb
 - `public/data/shop.json`: kaufbare Radpakete und Skin-Paletten
 - `public/data/nouns.json`: Substantive mit vollständigen Kasus- und Numerusformen
 
-Im Reiter **Rom** kaufen angemeldete Spieler Baumaterial mit Assen: 20 Materialien (80 Asse) ergeben ein Haus. Fertige Häuser geben je 1 Gloria für besondere Gebäude und erzeugen je 1 As Steuer pro Stunde, solange die Seite sichtbar geöffnet ist. Fortschritt und Gloria werden im Ranglisten-Konto gespeichert; neue Datenbanken nutzen das vollständige Schema, bestehende Datenbanken benötigen die Migration oben.
+Im Reiter **Rom** kaufen angemeldete Spieler Baumaterial mit Assen und investieren es in einzelne Bauplätze auf der Karte: 20 Materialien (80 Asse) ergeben ein Haus. Fertige Häuser geben je 1 Gloria; freigeschaltete Sonderbauten kosten zusätzlich 5 Gloria und Baumaterial. Häuser erzeugen je 1 As Steuer pro Stunde, solange die Seite sichtbar geöffnet ist. Fortschritt und Gloria werden im Ranglisten-Konto gespeichert; neue Datenbanken nutzen das vollständige Schema, bestehende Datenbanken benötigen die Migration oben.
 
 Der Shop bietet drei zusätzliche Verb-Räder und drei kaufbare Skins. Käufe und Ausrüstung werden lokal im Browser gespeichert und sind nicht zwischen Geräten synchronisiert. Bei der Rangliste meldet „Mitmachen“ mit Klassencode und Spitzname am vorhandenen Konto an oder legt ein neues an. Bei einer erneuten Anmeldung wird das Asse-Guthaben mit dem gespeicherten Ranglistenstand synchronisiert; lokaler Shop-Besitz bleibt auf das jeweilige Gerät beschränkt. Ausgaben senken nur das verfügbare Guthaben; die Rangliste zählt weiterhin alle verdienten Asse.
 

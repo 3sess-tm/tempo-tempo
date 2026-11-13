@@ -360,6 +360,34 @@
      #shop .shop-head>span{text-align:left;max-width:none}
 }
 
+#cityMapShell{display:none;flex:none;width:min(500px,42vw,calc(100dvh - var(--hh) - 24px));color:#433924}
+.city-mode #wheel,.city-mode #wheelToggle{display:none!important}
+.city-mode #cityMapShell{display:block}
+.city-map-heading{display:flex;justify-content:space-between;align-items:baseline;padding:0 6px 6px;color:#675337;font-family:Cinzel,Georgia,serif}
+.city-map-heading span{font-size:1.35rem;font-weight:700;letter-spacing:.14em}
+.city-map-heading small{font:600 .65rem Lexend,system-ui,sans-serif;letter-spacing:.1em}
+.city-map{position:relative;overflow:hidden;border:5px solid #8e7045;border-radius:20px;box-shadow:0 8px 18px rgba(51,37,18,.25),inset 0 0 0 2px #e9d8ae;background:#d9d4a9;aspect-ratio:800/520}
+.city-map-art{display:block;width:100%;height:100%}
+.city-river-label{font:italic 600 18px Georgia,serif;letter-spacing:5px;fill:#316b71;opacity:.82}
+.city-map-label{font:600 16px Cinzel,Georgia,serif;letter-spacing:4px;fill:#756541;opacity:.8}
+#cityMapSites{position:absolute;inset:0}
+.map-site{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:clamp(64px,16%,104px);min-height:54px;padding:4px 3px;border:1px solid #89754e;border-radius:9px;background:rgba(248,240,214,.94);color:#4b3b25;box-shadow:0 2px 6px rgba(45,34,17,.26);font:inherit;text-align:center;line-height:1.05;cursor:pointer;transition:transform .15s,filter .15s,background .15s}
+.map-site:hover,.map-site:focus-visible{z-index:2;transform:translate(-50%,-50%) scale(1.09);outline:2px solid #fff4cf;outline-offset:1px}
+.map-site .map-icon{font:700 1.35rem Georgia,serif;line-height:1;color:#756447;text-shadow:0 1px #fff}
+.map-site b{font-size:clamp(.55rem,1.3vw,.72rem);white-space:nowrap}
+.map-site small{min-height:1em;font-size:clamp(.48rem,1.1vw,.61rem);color:#756447;white-space:nowrap}
+.map-site.is-locked{filter:grayscale(1);opacity:.72;background:rgba(213,211,197,.92)}
+.map-site.has-progress{background:rgba(242,218,162,.97);border-color:#a17b39}
+.map-site.is-complete{background:rgba(208,224,177,.97);border-color:#597347;box-shadow:0 0 0 2px rgba(91,119,67,.3),0 3px 8px rgba(45,34,17,.28)}
+.map-site.selected{z-index:3;outline:3px solid #a34a2c;outline-offset:2px;transform:translate(-50%,-50%) scale(1.08)}
+.city-map-compass{position:absolute;right:9px;top:8px;display:grid;place-items:center;width:34px;height:40px;border:1px solid #968359;border-radius:50%;background:#f4ecd5c9;color:#7a3d2c;font:700 .62rem Cinzel,Georgia,serif;line-height:1.1}
+.city-map-key{display:flex;justify-content:center;gap:12px;padding:7px 2px 0;color:var(--muted);font-size:.68rem}
+.city-map-key span{display:flex;align-items:center;gap:4px}
+.city-map-key i{display:block;width:11px;height:11px;border:1px solid #89754e;border-radius:3px}
+.map-key-locked{background:#d5d3c5}.map-key-progress{background:#f2daa2}.map-key-done{background:#d0e0b1}
+.map-site.residential:not(.has-progress){filter:grayscale(1);opacity:.78;background:rgba(213,211,197,.92)}
+.map-site.landmark:not(.is-complete){filter:grayscale(1);opacity:.82;background:rgba(213,211,197,.92)}
+.map-site.landmark.has-progress:not(.is-complete){filter:none;opacity:1;background:rgba(242,218,162,.97)}
 #city .city-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:2px 0 10px;border-bottom:1px solid var(--line)}
 .city-currency{font-weight:700;white-space:nowrap;color:var(--red)}
 #cityAccount{margin:8px 0}
@@ -367,26 +395,12 @@
 .city-stat{display:flex;flex-direction:column;gap:3px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--plaster)}
 .city-stat b{font-size:1.15rem}
 .city-stat span{font-size:.76rem;color:var(--muted)}
-.city-progress{margin:12px 0}
-.city-progress-label{display:flex;justify-content:space-between;gap:8px;font-size:.82rem;margin-bottom:5px}
-.city-progress-label span{color:var(--muted)}
-.city-bar{height:10px;border-radius:8px;overflow:hidden;background:var(--line)}
-.city-bar i{display:block;width:0;height:100%;background:#879b53;transition:width .2s}
 .city-invest{padding:10px;border-radius:8px;background:var(--plaster)}
 .city-invest label{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px}
-.city-invest label small{font-weight:400;color:var(--muted)}
 .city-invest .row{align-items:center}
 .city-invest input{max-width:100px}
-.city-section-title{font-size:.95rem;margin:16px 0 7px;color:var(--muted)}
-.city-buildings{display:grid;gap:7px}
-.city-building{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--plaster)}
-.city-building>div{display:flex;flex-direction:column;gap:3px;min-width:0}
-.city-building span{font-size:.76rem;color:var(--muted)}
-.city-building button{flex:none}
-.city-building button:disabled{opacity:.55;cursor:not-allowed}
-.city-building.built{border-color:#879b53}
-.city-check{font-size:1.2rem;font-weight:700;color:#5d7a3a}
-.city-complete{padding:10px;border-radius:8px;background:#dfe9d2;font-weight:600;text-align:center}
+.city-invest input{width:82px}
+.city-invest button:disabled{opacity:.55;cursor:not-allowed}
 #cityMessage{min-height:1.4em;margin-top:8px}
 
 .wheel-toggle{display:none}
@@ -397,6 +411,7 @@
     box-shadow:0 2px 6px rgba(50,35,20,.14)
   }
   body.small #wheel{max-width:100%;margin-inline:auto}
+  body.small #cityMapShell{width:min(94vw,560px);min-width:0;margin-inline:auto}
   body.small.wheel-collapsed #wheel{display:none}
   body.small .panel{width:min(100%,760px);margin-inline:auto}
   body.small .panel .ex{overflow:visible}
@@ -439,7 +454,18 @@
   #vlist{border-color:var(--line)}
   .vbtn.on,.kbtn.on{background:#51432b!important;color:var(--ink)!important}
   .shop-skin-preview{background:#302a23}
-  .city-complete{background:#394632}
+  .city-map-heading{color:#e0c995}
+  .map-site{background:rgba(57,49,35,.95);color:#f0e2bf;border-color:#85714e}
+  .map-site .map-icon{color:#c6af7e;text-shadow:none}
+  .map-site small{color:#d1bd95}
+  .map-site.is-locked{background:rgba(72,70,62,.94)}
+  .map-site.has-progress{background:rgba(107,83,43,.97)}
+  .map-site.is-complete{background:rgba(62,83,47,.97)}
+  .map-site.residential:not(.has-progress),.map-site.landmark:not(.is-complete){background:rgba(72,70,62,.94)}
+  .map-site.landmark.has-progress:not(.is-complete){background:rgba(107,83,43,.97)}
+  .city-map-key{color:#d1bd95}
+  .map-key-locked{background:#5b594f}.map-key-progress{background:#6b532b}.map-key-done{background:#3e532f}
+  .city-map-compass{background:#332c20;color:#e8c995}
   .icard{background:linear-gradient(90deg,#332a1e,#302a23 8%,#302a23 92%,#332a1e)}
   .cover{color:#d0bea1;background:repeating-linear-gradient(135deg,#4a4031 0 6px,#403728 6px 12px)}
   #wtab tr:hover .cover{background:#5b4c37;color:#f0e7d8}
@@ -461,7 +487,7 @@
   .tp{display:none!important}
   .tp.on{display:block!important}
   .hint,.shop-item p,.shop-price{color:#444!important}
-  .lbl li,.shop-item,.city-building,.city-stat,.city-invest{background:#fff!important;border:1px solid #ccc}
+  .lbl li,.shop-item,.city-stat,.city-invest{background:#fff!important;border:1px solid #ccc}
   .lbl li.me{font-weight:700}
   input,textarea,select{border:1px solid #999!important;background:#fff!important;color:#111!important;-webkit-text-fill-color:#111}
   a{color:#111;text-decoration:none}

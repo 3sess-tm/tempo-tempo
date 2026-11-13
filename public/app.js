@@ -575,6 +575,7 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
   document.querySelectorAll('.tp').forEach(x=>x.classList.toggle('on',x.id===b.dataset.tab));
   document.body.classList.toggle('editing', b.dataset.tab==='t4');
+  document.body.classList.toggle('city-mode', b.dataset.tab==='city');
   if (b.dataset.tab==='t5') lbLoad();
   if (b.dataset.tab==='shop') renderShop();
   if (b.dataset.tab==='city') cityLoad();
@@ -633,6 +634,7 @@ function layout(){
   updateWheelToggle();
   wheel.style.width = size+'px';
   wheel.style.setProperty('--u', size/100+'px');
+  document.getElementById('cityMapShell').style.width = size+'px';
   if (typeof fitWin==='function') fitWin();
 }
 const wheelToggle = document.getElementById('wheelToggle');
@@ -1215,23 +1217,32 @@ lbEl('lbSave').onclick = async ()=>{
 };
 const CITY_MATERIAL_PRICE = 4;
 const CITY_HOUSE_MATERIALS = 20;
+const CITY_HOUSING_SITES = ['insula-1','insula-2','insula-3','insula-4','insula-5'];
 const CITY_BUILDINGS = [
-  { houses: 5, name: 'Forum Romanum' },
-  { houses: 15, name: 'Thermen' },
-  { houses: 30, name: 'Kolosseum' },
-  { houses: 50, name: 'Circus Maximus' },
-  { houses: 80, name: 'Pantheon' }
+  { id:'forum', houses:5, materials:100, name:'Forum Romanum' },
+  { id:'thermae', houses:15, materials:200, name:'Thermen' },
+  { id:'colosseum', houses:30, materials:300, name:'Kolosseum' },
+  { id:'circus', houses:50, materials:400, name:'Circus Maximus' },
+  { id:'pantheon', houses:80, materials:500, name:'Pantheon' }
 ];
+const CITY_SITE_NAMES = {
+  'insula-1':'Vicus Tiber','insula-2':'Subura','insula-3':'Esquilin','insula-4':'Aventin','insula-5':'Palatin'
+};
 let cityState = null, cityReady = false, cityRequestId = 0;
+let citySelectedSite = '';
 let cityActiveMs = 0, cityActiveAccount = '';
 const cityStatus = document.getElementById('cityStatus');
 const cityMessage = document.getElementById('cityMessage');
 function citySignedIn(){ return !!(lbCfg.name && lbCfg.board && lbCfg.id); }
 function cityUpdateState(data){
   if (!Number.isSafeInteger(data.progress) || data.progress < 0 ||
-      !Number.isSafeInteger(data.currency) || data.currency < 0)
+      !Number.isSafeInteger(data.currency) || data.currency < 0 ||
+      !data.sites || typeof data.sites!=='object' || Array.isArray(data.sites))
     throw new Error('Ungültiger Stadtstand.');
-  cityState = {progress:data.progress,currency:data.currency};
+  const siteIds=[...CITY_HOUSING_SITES,...CITY_BUILDINGS.map(building=>building.id)];
+  if(siteIds.some(site=>!Number.isSafeInteger(data.sites[site])||data.sites[site]<0))
+    throw new Error('Ungültiger Baufortschritt.');
+  cityState = {progress:data.progress,currency:data.currency,sites:data.sites};
   cityReady = true;
   if (cityActiveAccount!==lbCfg.id){
     cityActiveAccount=lbCfg.id;
@@ -1243,12 +1254,14 @@ function cityUpdateState(data){
   cityRender();
 }
 async function cityCall(opts={}, query=''){
-  const response=await fetch('/api/city'+query,opts);
+  const accountQuery=query||`?board=${encodeURIComponent(lbCfg.board)}&id=${encodeURIComponent(lbCfg.id)}`;
+  const response=await fetch('/api/city'+accountQuery,opts);
   if (!/json/.test(response.headers.get('content-type')||'')) throw new Error('Die Stadt-API hat eine ungültige Antwort gesendet.');
   const data=await response.json();
   if (!response.ok) throw new Error(data.error==='balance'
     ? 'Dein Ranglistenstand ist noch nicht aktuell. Bitte warte kurz und versuche es erneut.'
-    : data.error==='locked' ? 'Dieses Gebäude ist noch gesperrt oder Gloria fehlen.'
+    : data.error==='locked' ? 'Dieser Bauplatz ist noch gesperrt.'
+    : data.error==='gloria' ? 'Für dieses besondere Gebäude benötigst du 5 Gloria.'
     : 'Der Stadtstand konnte nicht gespeichert werden. Bitte versuche es erneut.');
   return data;
 }
@@ -1263,29 +1276,69 @@ function cityRender(){
   }
   account.textContent=`Gespeichert für ${lbCfg.name} · Material kostet ${CITY_MATERIAL_PRICE} Asse je Stück. Rätsel bringen deutlich schneller Asse.`;
   game.hidden=false;
-  const houses=Math.floor(cityState.progress/CITY_HOUSE_MATERIALS);
-  const materialProgress=cityState.progress%CITY_HOUSE_MATERIALS;
-  const spent=Math.max(0,houses-cityState.currency);
-  const completedBuildings=Math.floor(spent/5);
+  const houses=CITY_HOUSING_SITES.reduce((sum,site)=>sum+Math.floor(cityState.sites[site]/CITY_HOUSE_MATERIALS),0);
   document.getElementById('cityCurrency').textContent=`${cityState.currency} Gloria`;
   document.getElementById('cityHouseCount').textContent=String(houses);
   document.getElementById('cityTaxRate').textContent=`${houses} Asse`;
-  document.getElementById('cityProgressText').textContent=`${materialProgress} / ${CITY_HOUSE_MATERIALS} Materialien`;
-  document.getElementById('cityProgressBar').style.width=`${materialProgress/CITY_HOUSE_MATERIALS*100}%`;
-  const progressBar=document.querySelector('.city-bar');
-  progressBar.setAttribute('aria-valuenow',String(materialProgress));
-  document.getElementById('cityBuildings').innerHTML=CITY_BUILDINGS.map((building,index)=>{
-    const built=index<completedBuildings;
-    const available=index===completedBuildings && houses>=building.houses && cityState.currency>=5;
-    const locked=index>completedBuildings || houses<building.houses;
-    const status=built?'Fertig':available?'Kosten: 5 Gloria':locked?`Freischaltung ab ${building.houses} Häusern`:'Benötigt 5 Gloria';
-    return `<article class="city-building${built?' built':''}">
-      <div><b>${building.name}</b><span>${status}</span></div>
-      ${built?'<span class="city-check" aria-label="Fertig">✓</span>':`<button type="button" class="sec small" data-city-building="${index}" ${available?'':'disabled'}>Bauen</button>`}
-    </article>`;
-  }).join('');
-  if (completedBuildings>=CITY_BUILDINGS.length && houses>=CITY_BUILDINGS[CITY_BUILDINGS.length-1].houses)
-    document.getElementById('cityBuildings').insertAdjacentHTML('beforeend','<div class="city-complete">Rom ist vollendet! Die nächsten Städte kommen später.</div>');
+  const totalSites=[...CITY_HOUSING_SITES,...CITY_BUILDINGS.map(building=>building.id)];
+  totalSites.forEach(site=>{
+    const marker=document.querySelector(`[data-city-site="${site}"]`);
+    const progress=cityState.sites[site];
+    const housing=CITY_HOUSING_SITES.includes(site);
+    const building=CITY_BUILDINGS.find(item=>item.id===site);
+    const capacity=housing?400:building.materials;
+    const locked=!!building&&houses<building.houses;
+    const complete=progress>=capacity;
+    marker.classList.toggle('is-locked',locked);
+    marker.classList.toggle('is-complete',complete);
+    marker.classList.toggle('has-progress',progress>0);
+    marker.setAttribute('aria-pressed',String(citySelectedSite===site));
+    marker.setAttribute('aria-label',`${housing?CITY_SITE_NAMES[site]:building.name}: ${housing?`${Math.floor(progress/CITY_HOUSE_MATERIALS)} Häuser, ${progress%CITY_HOUSE_MATERIALS} von 20 Materialien im nächsten Haus`:`${progress} von ${capacity} Materialien`}${locked?`, freigeschaltet ab ${building.houses} Häusern`:''}`);
+    marker.querySelector('small').textContent=housing
+      ? `${Math.floor(progress/CITY_HOUSE_MATERIALS)} Häuser`
+      : complete?'Errichtet':locked?`${building.houses} Häuser nötig`:`${Math.round(progress/capacity*100)}%`;
+    marker.querySelector('.map-icon').textContent=housing
+      ? progress?'⌂':'⌑'
+      : complete?({forum:'🏛',thermae:'♨',colosseum:'🏟',circus:'🏟',pantheon:'🏛'}[site])
+      : ({forum:'▤',thermae:'♨',colosseum:'◉',circus:'▱',pantheon:'⌂'}[site]);
+  });
+  cityRenderSelection(houses);
+  const completeBuildings=CITY_BUILDINGS.every(building=>cityState.sites[building.id]>=building.materials);
+  if(completeBuildings&&houses>=80) cityMessage.textContent='Rom ist vollendet! Die nächsten Städte kommen später.';
+}
+function cityRenderSelection(houses=CITY_HOUSING_SITES.reduce((sum,id)=>sum+Math.floor((cityState?.sites?.[id]||0)/CITY_HOUSE_MATERIALS),0)){
+  const label=document.getElementById('citySelectedLabel');
+  const info=document.getElementById('citySelectedInfo');
+  const invest=document.getElementById('cityInvest');
+  const input=document.getElementById('cityMaterials');
+  const site=citySelectedSite;
+  const housing=CITY_HOUSING_SITES.includes(site);
+  const building=CITY_BUILDINGS.find(item=>item.id===site);
+  if(!cityReady||!cityState||(!housing&&!building)){
+    label.textContent='Bauplatz auswählen';
+    info.textContent='Wähle einen Bauplatz auf der Karte. Baumaterial kostet 4 Asse pro Stück.';
+    invest.disabled=true;
+    return;
+  }
+  const progress=cityState.sites[site];
+  const capacity=housing?400:building.materials;
+  const unlocked=!building||houses>=building.houses;
+  const finished=progress>=capacity;
+  const maxInvestment=Math.min(100,capacity-progress);
+  input.max=String(Math.max(1,maxInvestment));
+  if(Number(input.value)>maxInvestment) input.value=String(Math.max(1,maxInvestment));
+  label.textContent=housing?`${CITY_SITE_NAMES[site]} · Häuserbezirk`:`${building.name} · Sonderbau`;
+  info.textContent=housing
+    ? finished?'20 Häuser fertig – dieser Bezirk ist vollendet.':`${Math.floor(progress/CITY_HOUSE_MATERIALS)} Häuser fertig · ${progress%CITY_HOUSE_MATERIALS}/20 Materialien im nächsten Haus · ${Math.max(0,20-progress%CITY_HOUSE_MATERIALS)} bis zum nächsten Haus.`
+    : finished?'Fertiggestellt.':!unlocked?`Ab ${building.houses} fertigen Häusern freigeschaltet.`
+    : `${progress}/${capacity} Materialien · kostet zusätzlich 5 Gloria bei Fertigstellung${cityState.currency<5?' (du hast noch nicht genug Gloria)':''}.`;
+  invest.disabled=!unlocked||finished||(!!building&&progress+Number(input.value)>=capacity&&cityState.currency<5);
+}
+function citySelectSite(site){
+  if(!CITY_HOUSING_SITES.includes(site)&&!CITY_BUILDINGS.some(building=>building.id===site)) return;
+  citySelectedSite=site;
+  document.querySelectorAll('[data-city-site]').forEach(marker=>marker.classList.toggle('selected',marker.dataset.citySite===site));
+  cityRender();
 }
 async function cityLoad(){
   const requestId=++cityRequestId;
@@ -1309,24 +1362,28 @@ async function cityLoad(){
 async function cityInvest(){
   const input=document.getElementById('cityMaterials');
   const materials=Number(input.value);
+  const site=citySelectedSite;
   if (!Number.isSafeInteger(materials)||materials<1||materials>100){
     cityMessage.textContent='Wähle 1 bis 100 Materialien.';
     return;
   }
+  if(!site){cityMessage.textContent='Wähle zuerst einen Bauplatz auf der Karte.';return;}
   const cost=materials*CITY_MATERIAL_PRICE;
   if (purse<cost){ cityMessage.textContent=`Dafür fehlen noch ${priceText(cost-purse)}.`; return; }
   const button=document.getElementById('cityInvest');
   button.disabled=true; cityMessage.textContent='Material wird investiert …';
   try{
     if (!await lbFlush()) throw new Error('Dein Kontostand konnte nicht synchronisiert werden. Bitte versuche es erneut.');
+    const previousHouses=CITY_HOUSING_SITES.reduce((sum,id)=>sum+Math.floor(cityState.sites[id]/CITY_HOUSE_MATERIALS),0);
     const data=await cityCall({
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({board:lbCfg.board,id:lbCfg.id,action:'invest',progress:cityState.progress+materials})
+      body:JSON.stringify({action:'invest',site,materials})
     });
     purse-=cost;
     try{ localStorage.setItem('drehscheibe-asse',purse); }catch(e){}
     cityUpdateState(data);
-    const newHouses=Math.floor(data.progress/CITY_HOUSE_MATERIALS)-Math.floor((data.progress-materials)/CITY_HOUSE_MATERIALS);
+    const newHouses=CITY_HOUSING_SITES.reduce((sum,id)=>sum+Math.floor(data.sites[id]/CITY_HOUSE_MATERIALS),0)-
+      previousHouses;
     cityMessage.textContent=newHouses
       ? `${newHouses} ${newHouses===1?'Haus ist':'Häuser sind'} fertig – Gloria verdient!`
       : `${materials} ${materials===1?'Material wurde':'Materialien wurden'} eingelagert.`;
@@ -1334,24 +1391,12 @@ async function cityInvest(){
   }catch(error){ cityMessage.textContent=error.message; }
   finally{ button.disabled=false; }
 }
-async function cityBuild(index){
-  const buttons=document.querySelectorAll('[data-city-building]');
-  buttons.forEach(button=>button.disabled=true);
-  cityMessage.textContent='Gebäude wird errichtet …';
-  try{
-    const data=await cityCall({
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({board:lbCfg.board,id:lbCfg.id,action:'building',index})
-    });
-    cityUpdateState(data);
-    cityMessage.textContent=`${CITY_BUILDINGS[index].name} wurde fertiggestellt.`;
-  }catch(error){ cityMessage.textContent=error.message; cityRender(); }
-}
 document.getElementById('cityInvest').addEventListener('click',cityInvest);
-document.getElementById('cityBuildings').addEventListener('click',event=>{
-  const button=event.target.closest('[data-city-building]');
-  if (button) cityBuild(Number(button.dataset.cityBuilding));
+document.getElementById('cityMapSites').addEventListener('click',event=>{
+  const button=event.target.closest('[data-city-site]');
+  if (button) citySelectSite(button.dataset.citySite);
 });
+document.getElementById('cityMaterials').addEventListener('input',()=>cityRenderSelection());
 function cityPersistActivity(){
   if (!cityActiveAccount) return;
   try{ localStorage.setItem(`tempo-city-active-${cityActiveAccount}`,String(cityActiveMs%3600000)); }catch(e){}
@@ -1362,7 +1407,7 @@ function cityTick(){
   cityLastTick=now;
   if (!document.hidden && cityReady && cityState && citySignedIn()){
     cityActiveMs+=elapsed;
-    const houses=Math.floor(cityState.progress/CITY_HOUSE_MATERIALS);
+    const houses=CITY_HOUSING_SITES.reduce((sum,site)=>sum+Math.floor(cityState.sites[site]/CITY_HOUSE_MATERIALS),0);
     const earnedTax=Math.floor(cityActiveMs/3600000)*houses;
     if (earnedTax>0){
       cityActiveMs%=3600000;
