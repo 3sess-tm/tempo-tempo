@@ -72,3 +72,33 @@ Das Layout passt sich kleinen Bildschirmen an: Die Drehscheibe lässt sich einkl
 Die Spielbereiche sind auch direkt verlinkbar: `#practice`, `#identify`, `#my-verbs`, `#shop`, `#rome`, `#leaderboard` und `#help`. Auf Mobilgeräten lässt sich innerhalb des aktiven Bereichs horizontal wischen; Browser-Zurück und -Vorwärts wechseln zwischen den zuletzt geöffneten Bereichen.
 
 Über die Wortart-Auswahl gibt es zwei Übungsarten für Substantive: deutsche Vorgaben ins Lateinische übertragen sowie eine lateinische Form nach Substantiv, Kasus und Numerus bestimmen. Das Substantivrad zeigt die fünf Deklinationsklassen mit ausgewählten Formen aller fünf Deklinationen; der Genitiv Singular und das Genus gehören jeweils zum Lemma. Die Formen sind im Katalog vollständig hinterlegt, damit auch Neutra, i-Stämme und besondere Vokativformen nicht durch pauschale Endungsregeln verfälscht werden.
+
+## Flutter-Portierung (Vorbereitung)
+
+Das Flutter-Projekt liegt im Repository-Root; die bestehende HTML-/JavaScript-Version und das bisherige Deployment bleiben bis zu einer ausdrücklich geplanten Umstellung aktiv. Der erste Zielpfad ist **Flutter Web**, passend zum bestehenden Browser-Produkt. Das Flutter-SDK enthält bereits das Dart-SDK. Im aktuellen Entwicklungscontainer sind Flutter 3.50.0 und Dart 3.14.0 unter `$HOME/flutter` installiert. Für eine neue Umgebung Flutter stable installieren und den SDK-Ordner zum `PATH` hinzufügen:
+
+```sh
+git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$HOME/flutter"
+export PATH="$HOME/flutter/bin:$PATH"
+```
+
+In einer vorhandenen Shell kann die `PATH`-Ergänzung stattdessen in die eigene Shell-Konfiguration übernommen werden. Projektbefehle:
+
+```sh
+flutter pub get
+flutter analyze
+flutter test
+flutter run -d web-server --web-port 8080
+flutter build web
+```
+
+`flutter build web` erzeugt `build/web/`. Für eine lokale Vorschau zusammen mit dem bestehenden Worker nach dem Build `npx wrangler dev --config wrangler.flutter.toml` verwenden; bei Bedarf das lokale D1-Schema mit `npx wrangler d1 execute tempo-lb --local --config wrangler.flutter.toml --file=./schema.sql` laden. Diese Konfiguration ist nur für lokale Vorschauen gedacht. **Nicht** mit ihr deployen: `wrangler.toml` und der bestehende GitHub-Deploy-Workflow veröffentlichen weiterhin `public/`. Ein Wechsel des Produktiv-Frontends erfordert einen separaten, abgestimmten Deployment-Schritt.
+
+### Leitplanken für die Übersetzung
+
+- Die drei JSON-Kataloge unter `public/data/` bleiben zunächst die einzige Datenquelle und sind bereits als Flutter-Assets eingebunden. Macrons, vollständige Substantivparadigmen, IDs und Preise unverändert übernehmen; keine Formen aus allgemeinen Endungsregeln ableiten.
+- Spiellogik (Formbildung, Aufgaben, Belohnungen, Shop-/Stadtregeln) von UI und Plattformdiensten trennen. Die bisherige Anwendung bündelt diese Bereiche in `public/app.js`; sinnvolle Dart-Features sind Drehscheibe, Übungen, eigene Verben, Shop, Rom, Rangliste und Hilfe.
+- Die Backend-Verträge bleiben same-origin: `/api/lb` und `/api/city` sprechen mit dem Cloudflare Worker und D1. HTTP-Status und Fehlerantworten beachten; keine zweite Client-Implementierung der serverseitigen Stadtregeln und kein CORS erforderlich.
+- Browserdaten sind Teil des Nutzerkontos auf dem Gerät: vor Änderungen an `localStorage`-Schlüsseln, Guthaben, gekauften Rädern/Skins, eigenen Verben und Einstellungen eine versionsbezogene Übernahme planen. Shop-Besitz bleibt lokal; Ranglistenstand und Rom sind kontogebunden.
+- Die Web-Version nutzt Browserfunktionen, die Dart nicht automatisch ersetzt: SVG-/Touch-Drehscheibe, Vorlesen (`speechSynthesis`), Ton, Vollbild, Drucken, Sichtbarkeit/Steuer-Timer, Deep Links und Browser-Zurück/Vorwärts. Für jede Funktion eine Web-Implementierung oder einen klaren Ersatz vorsehen und Tastaturbedienung, Semantik, kleine Bildschirme sowie hell/dunkel mitprüfen.
+- Vor einem öffentlichen Wechsel App-Icons/Installationsmetadaten prüfen, Web-Routen und Deep Links testen sowie Ranglisten- und Rom-API gegen eine lokale D1-Datenbank validieren. Android-/iOS-Toolchains sind nicht Teil dieser Web-Vorbereitung; dafür wäre eine eigene Plattformentscheidung und Einrichtung nötig.

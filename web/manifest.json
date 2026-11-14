@@ -1,0 +1,35 @@
+{
+    "name": "tempo, tempo – fit in Formen",
+    "short_name": "tempo, tempo",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#efe6d3",
+    "theme_color": "#efe6d3",
+    "description": "Lateinische Verbformen und Substantive spielerisch üben.",
+    "orientation": "any",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
