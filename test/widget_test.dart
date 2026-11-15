@@ -1,3 +1,5 @@
+import 'dart:ui' show Size;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tempo_tempo/main.dart';
@@ -21,5 +23,11 @@ void main() {
     await tester.pump();
     expect(find.text('Form bestimmen'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    await tester.pump();
+    final layoutError = tester.takeException();
+    expect(layoutError, isNull);
   });
 }

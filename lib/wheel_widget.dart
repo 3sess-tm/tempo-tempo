@@ -19,79 +19,82 @@ class _WheelWidgetState extends State<WheelWidget> {
   double? _lastAngle;
 
   @override
-  Widget build(BuildContext context) {
-    final state = widget.state;
-    final data = state.data;
-    final colors = state.activePalette;
-    return AspectRatio(
-      aspectRatio: 1,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = constraints.biggest.shortestSide;
-          final textScale = size / 380;
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onPanStart: (details) {
-              final point = details.localPosition;
-              final center = Offset(size / 2, size / 2);
-              final distance = (point - center).distance / size * 200;
-              if (distance < 58 || distance > 102) return;
-              _draggedRing = distance > 78 ? 'A' : 'B';
-              _lastAngle = _angle(point, center);
-            },
-            onPanUpdate: (details) {
-              final ring = _draggedRing;
-              final last = _lastAngle;
-              if (ring == null || last == null) return;
-              final angle = _angle(
-                details.localPosition,
-                Offset(size / 2, size / 2),
-              );
-              var delta = angle - last;
-              if (delta > 180) delta -= 360;
-              if (delta < -180) delta += 360;
-              _lastAngle = angle;
-              state.rotateRing(ring, delta);
-            },
-            onPanEnd: (_) {
-              final ring = _draggedRing;
-              _draggedRing = null;
-              _lastAngle = null;
-              if (ring != null) state.finishRotation(ring);
-            },
-            onPanCancel: () {
-              final ring = _draggedRing;
-              _draggedRing = null;
-              _lastAngle = null;
-              if (ring != null) state.finishRotation(ring);
-            },
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: Size(size, size),
-                  painter: WheelPainter(
-                    data: data,
-                    selectedVerb: state.selectedVerb,
-                    selectedTense: state.selectedTense,
-                    rotationA: state.outerRotation,
-                    rotationB: state.innerRotation,
-                    colors: colors,
-                    textScale: textScale,
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: widget.state.wheelChanges,
+    builder: (context, _) {
+      final state = widget.state;
+      final data = state.data;
+      final colors = state.activePalette;
+      return AspectRatio(
+        aspectRatio: 1,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final size = constraints.biggest.shortestSide;
+            final textScale = size / 380;
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (details) {
+                final point = details.localPosition;
+                final center = Offset(size / 2, size / 2);
+                final distance = (point - center).distance / size * 200;
+                if (distance < 58 || distance > 102) return;
+                _draggedRing = distance > 78 ? 'A' : 'B';
+                _lastAngle = _angle(point, center);
+              },
+              onPanUpdate: (details) {
+                final ring = _draggedRing;
+                final last = _lastAngle;
+                if (ring == null || last == null) return;
+                final angle = _angle(
+                  details.localPosition,
+                  Offset(size / 2, size / 2),
+                );
+                var delta = angle - last;
+                if (delta > 180) delta -= 360;
+                if (delta < -180) delta += 360;
+                _lastAngle = angle;
+                state.rotateRing(ring, delta);
+              },
+              onPanEnd: (_) {
+                final ring = _draggedRing;
+                _draggedRing = null;
+                _lastAngle = null;
+                if (ring != null) state.finishRotation(ring);
+              },
+              onPanCancel: () {
+                final ring = _draggedRing;
+                _draggedRing = null;
+                _lastAngle = null;
+                if (ring != null) state.finishRotation(ring);
+              },
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: Size(size, size),
+                    painter: WheelPainter(
+                      data: data,
+                      selectedVerb: state.selectedVerb,
+                      selectedTense: state.selectedTense,
+                      rotationA: state.outerRotation,
+                      rotationB: state.innerRotation,
+                      colors: colors,
+                      textScale: textScale,
+                    ),
                   ),
-                ),
-                SizedBox(
-                  width: size * .56,
-                  height: size * .56,
-                  child: _WheelCenter(state: state),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
+                  SizedBox(
+                    width: size * .56,
+                    height: size * .56,
+                    child: _WheelCenter(state: state),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    },
+  );
 
   double _angle(Offset point, Offset center) =>
       math.atan2(point.dx - center.dx, center.dy - point.dy) * 180 / math.pi;
@@ -280,6 +283,7 @@ class WheelPainter extends CustomPainter {
         88.5 * unit,
         angle,
         size: (data.tenses[index].length > 12 ? 7 : 8) * textScale,
+        maxWidth: _labelMaxWidth(88.5 * unit, outerStep),
         color: selected == 0
             ? _color('presentInk', const Color(0xFF3D5A35))
             : _ink,
@@ -308,6 +312,7 @@ class WheelPainter extends CustomPainter {
         70.0 * unit,
         angle,
         size: (label.length > 10 ? 5.4 : 7) * textScale,
+        maxWidth: _labelMaxWidth(70.0 * unit, step),
         color: _color('ringText', const Color(0xFF3B2E22)),
         bold: index == selectedVerb,
       );
@@ -318,6 +323,7 @@ class WheelPainter extends CustomPainter {
         64.5 * unit,
         angle,
         size: (meaning.length > 16 ? 3.2 : 4.1) * textScale,
+        maxWidth: _labelMaxWidth(64.5 * unit, step),
         color: _color('ringSub', const Color(0xFF7A6040)),
       );
     }
@@ -381,6 +387,7 @@ class WheelPainter extends CustomPainter {
     double radius,
     double angle, {
     required double size,
+    required double maxWidth,
     required Color color,
     bool bold = false,
   }) {
@@ -400,8 +407,9 @@ class WheelPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
       maxLines: 1,
-    )..layout(maxWidth: radius * .9);
-    var rotation = radians + math.pi / 2;
+      ellipsis: '…',
+    )..layout(maxWidth: maxWidth);
+    var rotation = radians;
     if (angle % 360 > 90 && angle % 360 < 270) rotation += math.pi;
     canvas
       ..save()
@@ -413,6 +421,9 @@ class WheelPainter extends CustomPainter {
     );
     canvas.restore();
   }
+
+  double _labelMaxWidth(double radius, double sectorDegrees) =>
+      2 * radius * math.sin(_radians(sectorDegrees / 2)) * .88;
 
   Color _color(String key, Color fallback) {
     final value = colors[key];

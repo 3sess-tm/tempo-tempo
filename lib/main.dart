@@ -72,42 +72,33 @@ class _TempoAppState extends State<TempoApp> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: _state,
-    builder: (context, _) {
-      if (!_state.initialized) {
-        return MaterialApp(
-          title: 'tempo, tempo – fit in Formen',
-          theme: _theme(Brightness.light),
-          darkTheme: _theme(Brightness.dark),
-          themeMode: ThemeMode.system,
-          home: const Scaffold(
+  Widget build(BuildContext context) => MaterialApp(
+    title: 'tempo, tempo – fit in Formen',
+    debugShowCheckedModeBanner: false,
+    theme: _theme(Brightness.light),
+    darkTheme: _theme(Brightness.dark),
+    themeMode: ThemeMode.system,
+    home: AnimatedBuilder(
+      animation: _state,
+      builder: (context, _) {
+        if (!_state.initialized) {
+          return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
-          ),
-        );
-      }
-      if (_state.loadError != null) {
-        return MaterialApp(
-          title: 'tempo, tempo – fit in Formen',
-          home: Scaffold(
+          );
+        }
+        if (_state.loadError != null) {
+          return Scaffold(
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(_state.loadError!),
               ),
             ),
-          ),
-        );
-      }
-      return MaterialApp(
-        title: 'tempo, tempo – fit in Formen',
-        debugShowCheckedModeBanner: false,
-        theme: _theme(Brightness.light),
-        darkTheme: _theme(Brightness.dark),
-        themeMode: ThemeMode.system,
-        home: TempoHome(state: _state),
-      );
-    },
+          );
+        }
+        return TempoHome(state: _state);
+      },
+    ),
   );
 
   ThemeData _theme(Brightness brightness) {
@@ -259,32 +250,37 @@ class _TempoHomeState extends State<TempoHome> {
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 8,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      state.itemLabel,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      '· ${state.data.tenses[state.selectedTense]}',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
+                AnimatedBuilder(
+                  animation: state.wheelChanges,
+                  builder: (context, _) => Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        state.itemLabel,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    ),
-                  ],
+                      Text(
+                        '· ${state.data.tenses[state.selectedTense]}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: size),
                   child: WheelWidget(state: state),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     FilterChip(
                       selected: state.snapEnabled,
@@ -293,7 +289,6 @@ class _TempoHomeState extends State<TempoHome> {
                         state.snapEnabled = value;
                       }),
                     ),
-                    const SizedBox(width: 8),
                     TextButton.icon(
                       onPressed: () => setState(() {
                         _wheelCollapsed = !_wheelCollapsed;

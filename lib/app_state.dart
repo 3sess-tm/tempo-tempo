@@ -28,8 +28,10 @@ class AppState extends ChangeNotifier {
   final CityClient _city;
   final Random _random = Random();
   final FlutterTts _tts = FlutterTts();
+  final ChangeNotifier wheelChanges = ChangeNotifier();
 
   LocalStore? _store;
+  GameData? _customVerbData;
   GameCatalog? catalog;
   String? loadError;
   String? notice;
@@ -104,7 +106,7 @@ class AppState extends ChangeNotifier {
     }
     if (isNounMode) return loadedCatalog.nounData;
     if (activeWheelId == 'my-verbs') {
-      return GameData.fromCustomVerbs(customVerbs);
+      return _customVerbData ??= GameData.fromCustomVerbs(customVerbs);
     }
     if (activeWheelId == 'starter') return loadedCatalog.starter;
     return loadedCatalog.wheels
@@ -771,7 +773,7 @@ class AppState extends ChangeNotifier {
         selectedPerson = rightForm!.person;
       }
     }
-    notifyListeners();
+    wheelChanges.notifyListeners();
   }
 
   void finishRotation(String ring) {
@@ -912,6 +914,7 @@ class AppState extends ChangeNotifier {
     }
     GameData.fromCustomVerbs([...customVerbs, verb]);
     customVerbs = [...customVerbs, verb];
+    _customVerbData = null;
     await _save(_customKey, customVerbs.map((item) => item.toJson()).toList());
     activeWheelId = 'my-verbs';
     isNounMode = false;
@@ -928,6 +931,7 @@ class AppState extends ChangeNotifier {
       return;
     }
     customVerbs = [...customVerbs]..removeAt(index);
+    _customVerbData = null;
     await _save(_customKey, customVerbs.map((item) => item.toJson()).toList());
     _refreshForm();
     _newIdentification();
@@ -961,6 +965,7 @@ class AppState extends ChangeNotifier {
     }
     GameData.fromCustomVerbs(imported);
     customVerbs = imported;
+    _customVerbData = null;
     await _save(_customKey, customVerbs.map((e) => e.toJson()).toList());
     await activateWheel('my-verbs');
     customStatus = 'Verbliste geladen.';
@@ -1378,6 +1383,7 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     _scoreTimer?.cancel();
+    wheelChanges.dispose();
     super.dispose();
   }
 }
