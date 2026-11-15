@@ -14,10 +14,10 @@ Voraussetzung ist das Flutter-SDK (Flutter 3.50.0 / Dart 3.14.0) und Node.js. Di
 
 ```sh
 flutter pub get
-flutter run -d web-server --web-port 8080
+flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8000
 ```
 
-Für eine Vorschau mit Worker-API und lokaler D1-Datenbank zuerst die Web-App bauen und Wrangler starten:
+In VS Code ist derselbe Startbefehl als Aufgabe **Flutter Web (Port 8000)** verfügbar. Nicht `web/index.html` direkt mit einem statischen Dateiserver öffnen: `flutter_bootstrap.js` wird beim Flutter-Lauf beziehungsweise Build erzeugt und liegt nicht im Quellordner `web/`. Falls Port 8000 bereits belegt ist, den dort laufenden statischen Server zuerst in seinem Terminal beenden. Für die veröffentlichungsnahe Vorschau mit Worker-API und lokaler D1-Datenbank zuerst die Web-App bauen und Wrangler starten:
 
 ```sh
 flutter build web

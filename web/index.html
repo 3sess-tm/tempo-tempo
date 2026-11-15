@@ -53,9 +53,17 @@
   <link rel="icon" href="favicon.ico" sizes="any">
 
   <title>tempo, tempo – fit in Formen</title>
-  <link rel="manifest" href="manifest.json">
+  <script>
+    if (!window.location.hostname.endsWith('.app.github.dev')) {
+      const manifest = document.createElement('link');
+      manifest.rel = 'manifest';
+      manifest.href = 'manifest.json';
+      document.head.append(manifest);
+    }
+  </script>
 </head>
 <body>
+  <!-- Serve via `flutter run` or from `build/web`; Flutter generates this bootstrap file. -->
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
