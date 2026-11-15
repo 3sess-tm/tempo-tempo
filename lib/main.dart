@@ -175,6 +175,7 @@ class _TempoHomeState extends State<TempoHome> {
   @override
   Widget build(BuildContext context) {
     final state = widget.state;
+    final compact = MediaQuery.sizeOf(context).width < 600;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -182,28 +183,55 @@ class _TempoHomeState extends State<TempoHome> {
           style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 1),
         ),
         actions: [
-          IconButton(
-            tooltip: state.soundEnabled ? 'Ton ausschalten' : 'Ton einschalten',
-            onPressed: () => state.setSound(!state.soundEnabled),
-            icon: Icon(state.soundEnabled ? Icons.volume_up : Icons.volume_off),
-          ),
-          IconButton(
-            tooltip: 'Einführung anzeigen',
-            onPressed: _showIntroductionAgain,
-            icon: const Icon(Icons.menu_book_outlined),
-          ),
-          IconButton(
-            tooltip: 'Vollbild umschalten',
-            onPressed: () async {
-              await browser.toggleFullscreen();
-            },
-            icon: const Icon(Icons.fullscreen),
-          ),
-          IconButton(
-            tooltip: 'Drucken',
-            onPressed: browser.printPage,
-            icon: const Icon(Icons.print_outlined),
-          ),
+          if (compact)
+            PopupMenuButton<String>(
+              tooltip: 'Menü',
+              onSelected: (action) async {
+                if (action == 'sound') {
+                  state.setSound(!state.soundEnabled);
+                } else if (action == 'intro') {
+                  await _showIntroductionAgain();
+                } else if (action == 'fullscreen') {
+                  await browser.toggleFullscreen();
+                } else {
+                  browser.printPage();
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'sound', child: Text('Ton umschalten')),
+                PopupMenuItem(value: 'intro', child: Text('Einführung')),
+                PopupMenuItem(value: 'fullscreen', child: Text('Vollbild')),
+                PopupMenuItem(value: 'print', child: Text('Drucken')),
+              ],
+            )
+          else ...[
+            IconButton(
+              tooltip: state.soundEnabled
+                  ? 'Ton ausschalten'
+                  : 'Ton einschalten',
+              onPressed: () => state.setSound(!state.soundEnabled),
+              icon: Icon(
+                state.soundEnabled ? Icons.volume_up : Icons.volume_off,
+              ),
+            ),
+            IconButton(
+              tooltip: 'Einführung anzeigen',
+              onPressed: _showIntroductionAgain,
+              icon: const Icon(Icons.menu_book_outlined),
+            ),
+            IconButton(
+              tooltip: 'Vollbild umschalten',
+              onPressed: () async {
+                await browser.toggleFullscreen();
+              },
+              icon: const Icon(Icons.fullscreen),
+            ),
+            IconButton(
+              tooltip: 'Drucken',
+              onPressed: browser.printPage,
+              icon: const Icon(Icons.print_outlined),
+            ),
+          ],
           const SizedBox(width: 8),
         ],
       ),
@@ -213,7 +241,7 @@ class _TempoHomeState extends State<TempoHome> {
             constraints: const BoxConstraints(maxWidth: 1500),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 1050 && !_wheelCollapsed;
+                final wide = constraints.maxWidth >= 1050;
                 final wheel = _wheelSection();
                 final content = _contentSection();
                 return SingleChildScrollView(
@@ -229,7 +257,7 @@ class _TempoHomeState extends State<TempoHome> {
                         )
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [if (!_wheelCollapsed) wheel, content],
+                          children: [wheel, content],
                         ),
                 );
               },
@@ -250,65 +278,82 @@ class _TempoHomeState extends State<TempoHome> {
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
-                AnimatedBuilder(
-                  animation: state.wheelChanges,
-                  builder: (context, _) => Wrap(
+                if (_wheelCollapsed)
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.toys_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(child: Text('Drehscheibe eingeklappt')),
+                      FilledButton.tonalIcon(
+                        onPressed: () => setState(() {
+                          _wheelCollapsed = false;
+                        }),
+                        icon: const Icon(Icons.expand_more),
+                        label: const Text('Anzeigen'),
+                      ),
+                    ],
+                  )
+                else ...[
+                  AnimatedBuilder(
+                    animation: state.wheelChanges,
+                    builder: (context, _) => Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          state.itemLabel,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text(
+                          '· ${state.data.tenses[state.selectedTense]}',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: size),
+                    child: WheelWidget(
+                      key: const ValueKey('wheel-widget'),
+                      state: state,
+                    ),
+                  ),
+                  Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 8,
                     runSpacing: 6,
-                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Text(
-                        state.itemLabel,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleMedium,
+                      FilterChip(
+                        selected: state.snapEnabled,
+                        label: const Text('Einrasten'),
+                        onSelected: (value) => setState(() {
+                          state.snapEnabled = value;
+                        }),
                       ),
-                      Text(
-                        '· ${state.data.tenses[state.selectedTense]}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                      TextButton.icon(
+                        onPressed: () => setState(() {
+                          _wheelCollapsed = true;
+                        }),
+                        icon: const Icon(Icons.expand_less),
+                        label: const Text('Scheibe einklappen'),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 8),
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: size),
-                  child: WheelWidget(state: state),
-                ),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    FilterChip(
-                      selected: state.snapEnabled,
-                      label: const Text('Einrasten'),
-                      onSelected: (value) => setState(() {
-                        state.snapEnabled = value;
-                      }),
-                    ),
-                    TextButton.icon(
-                      onPressed: () => setState(() {
-                        _wheelCollapsed = !_wheelCollapsed;
-                      }),
-                      icon: Icon(
-                        _wheelCollapsed ? Icons.expand_more : Icons.expand_less,
-                      ),
-                      label: Text(
-                        _wheelCollapsed
-                            ? 'Scheibe anzeigen'
-                            : 'Scheibe einklappen',
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  'Mittlerer Ring: Wort · äußerer Ring: Tempus oder Kasus',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                  Text(
+                    'Mittlerer Ring: Wort · äußerer Ring: Tempus oder Kasus',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ],
             ),
           ),
@@ -453,10 +498,30 @@ class _WalletCard extends StatelessWidget {
               spacing: 16,
               runSpacing: 6,
               children: [
-                _CoinCount(icon: '🟡', count: aurei, label: 'Aurei'),
-                _CoinCount(icon: '⚪', count: denarii, label: 'Denare'),
-                _CoinCount(icon: '🟠', count: sestertii, label: 'Sesterzen'),
-                _CoinCount(icon: '🟤', count: asses, label: 'Asse'),
+                _CoinCount(
+                  symbol: 'I',
+                  color: const Color(0xFFD5A943),
+                  count: aurei,
+                  label: 'Aurei',
+                ),
+                _CoinCount(
+                  symbol: 'XVI',
+                  color: const Color(0xFFA8B0B5),
+                  count: denarii,
+                  label: 'Denare',
+                ),
+                _CoinCount(
+                  symbol: 'IV',
+                  color: const Color(0xFFB87343),
+                  count: sestertii,
+                  label: 'Sesterzen',
+                ),
+                _CoinCount(
+                  symbol: 'I',
+                  color: const Color(0xFF80614D),
+                  count: asses,
+                  label: 'Asse',
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -504,19 +569,53 @@ class _WalletCard extends StatelessWidget {
 
 class _CoinCount extends StatelessWidget {
   const _CoinCount({
-    required this.icon,
+    required this.symbol,
+    required this.color,
     required this.count,
     required this.label,
   });
 
-  final String icon;
+  final String symbol;
+  final Color color;
   final int count;
   final String label;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
-    children: [Text(icon), const SizedBox(width: 5), Text('$count $label')],
+    children: [
+      Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [color.withValues(alpha: .5), color],
+          ),
+          border: Border.all(color: color.withValues(alpha: .8), width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: .2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          symbol,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: symbol.length > 2 ? 8 : 10,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      const SizedBox(width: 7),
+      Text('$count $label'),
+    ],
   );
 }
 
@@ -1223,91 +1322,218 @@ class _RomePanelState extends State<_RomePanel> {
     final state = widget.state;
     final city = state.cityState;
     final sites = [...CityClient.housingSites, ...CityClient.buildings.keys];
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Dein Rom',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                Text('${city?.currency ?? 0} Gloria'),
-              ],
-            ),
-            Text(
-              state.activeAccountName.isEmpty
-                  ? 'Melde dich zuerst über die Rangliste an. Dein Rom wird mit diesem Konto gespeichert.'
-                  : 'Gespeichert für ${state.activeAccountName} · Material kostet 4 Asse.',
-            ),
-            if (state.cityStatus.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(state.cityStatus),
-              ),
-            if (city != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD9D4A9),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: sites
-                      .map((site) => _siteButton(site, city, state))
-                      .toList(),
-                ),
-              ),
-              const SizedBox(height: 10),
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final cityTitle = Row(
+      children: [
+        Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            color: scheme.onPrimary.withValues(alpha: .14),
+            shape: BoxShape.circle,
+            border: Border.all(color: scheme.onPrimary.withValues(alpha: .35)),
+          ),
+          child: Icon(Icons.account_balance, color: scheme.onPrimary, size: 30),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                'Häuser: ${state.houses} · Steuern: ${state.houses} Asse/Stunde',
+                'Dein Rom',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: scheme.onPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              if (state.selectedSite.isNotEmpty)
-                _selectedSiteInfo(state.selectedSite, city, state),
-              Row(
+              Text(
+                state.activeAccountName.isEmpty
+                    ? 'Eine Stadt, die mit deinen Übungen wächst.'
+                    : 'Gespeichert für ${state.activeAccountName}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onPrimary.withValues(alpha: .88),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [scheme.primary, scheme.tertiary],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final badge = _GloriaBadge(amount: city?.currency ?? 0);
+              if (constraints.maxWidth < 400) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [cityTitle, const SizedBox(height: 12), badge],
+                );
+              }
+              return Row(
                 children: [
-                  SizedBox(
-                    width: 110,
-                    child: TextField(
-                      controller: _materials,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Material',
-                        hintText: '1–100',
-                      ),
-                    ),
-                  ),
+                  Expanded(child: cityTitle),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: state.selectedSite.isEmpty ? null : _invest,
-                      child: const Text('Material investieren'),
+                  badge,
+                ],
+              );
+            },
+          ),
+        ),
+        if (state.cityStatus.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Card(
+            color: scheme.secondaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: scheme.onSecondaryContainer),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(state.cityStatus)),
+                ],
+              ),
+            ),
+          ),
+        ],
+        if (city == null)
+          Card(
+            margin: const EdgeInsets.only(top: 12),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Icon(
+                    state.activeAccountName.isEmpty
+                        ? Icons.lock_outline
+                        : Icons.location_city_outlined,
+                    size: 40,
+                    color: scheme.primary,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.activeAccountName.isEmpty
+                        ? 'Melde dich zuerst über die Rangliste an, um dein Rom anzulegen.'
+                        : 'Dein Stadtplan wartet darauf, geladen zu werden.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: state.cityLoading ? null : state.loadCity,
+                    icon: state.cityLoading
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.map_outlined),
+                    label: Text(
+                      state.cityLoading ? 'Wird geladen …' : 'Stadtplan öffnen',
                     ),
                   ),
                 ],
               ),
-            ],
-            OutlinedButton.icon(
-              onPressed: state.cityLoading ? null : state.loadCity,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Rom aktualisieren'),
             ),
-          ],
-        ),
-      ),
+          )
+        else ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _CityMetric(
+                icon: Icons.home_work_outlined,
+                value: '${state.houses}',
+                label: 'Häuser',
+              ),
+              _CityMetric(
+                icon: Icons.construction_outlined,
+                value: '${city.progress}',
+                label: 'Material gesamt',
+              ),
+              _CityMetric(
+                icon: Icons.trending_up,
+                value: '${state.houses}',
+                label: 'Asse pro Stunde',
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Stadtplan',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: state.cityLoading ? null : state.loadCity,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Aktualisieren'),
+              ),
+            ],
+          ),
+          Text(
+            'Wähle einen Bauplatz und investiere Material, um Rom wachsen zu lassen.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: scheme.outlineVariant),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 760
+                    ? 3
+                    : constraints.maxWidth >= 500
+                    ? 2
+                    : 1;
+                final gap = 10.0;
+                final tileWidth =
+                    (constraints.maxWidth - gap * (columns - 1)) / columns;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    for (final site in sites)
+                      SizedBox(
+                        width: tileWidth,
+                        child: _citySiteCard(site, city, state),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+          if (state.selectedSite.isNotEmpty)
+            _selectedSiteCard(state.selectedSite, city, state),
+        ],
+      ],
     );
   }
 
-  Widget _siteButton(String site, CityState city, AppState state) {
+  Widget _citySiteCard(String site, CityState city, AppState state) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final residential = CityClient.housingSites.contains(site);
     final progress = city.sites[site] ?? 0;
     final building = CityClient.buildings[site];
@@ -1316,49 +1542,189 @@ class _RomePanelState extends State<_RomePanel> {
     final buildingHouses = building?.houses ?? 0;
     final buildingMaterials = building?.materials ?? 1;
     final name = residential ? CityClient.housingNames[site]! : building!.name;
+    final selected = state.selectedSite == site;
+    final invested = residential ? progress % 20 : progress;
+    final goal = residential ? 20 : buildingMaterials;
+    final ratio = (invested / goal).clamp(0.0, 1.0).toDouble();
     final subtitle = residential
-        ? '${progress ~/ 20} Häuser'
+        ? '${progress ~/ 20} ${progress ~/ 20 == 1 ? 'Haus' : 'Häuser'}'
         : complete
         ? 'Errichtet'
         : locked
-        ? '$buildingHouses Häuser nötig'
-        : '$progress/$buildingMaterials';
-    return SizedBox(
-      width: 130,
-      child: ChoiceChip(
-        selected: state.selectedSite == site,
-        avatar: Icon(
-          residential
-              ? Icons.home_outlined
-              : complete
-              ? Icons.account_balance
-              : Icons.foundation,
+        ? 'Ab $buildingHouses Häusern'
+        : '$progress/$buildingMaterials Material';
+    final icon = residential
+        ? Icons.location_city_outlined
+        : switch (site) {
+            'forum' => Icons.account_balance_outlined,
+            'thermae' => Icons.bathtub_outlined,
+            'colosseum' => Icons.stadium_outlined,
+            'circus' => Icons.flag_outlined,
+            'pantheon' => Icons.temple_buddhist_outlined,
+            _ => Icons.foundation_outlined,
+          };
+    return Material(
+      color: selected ? scheme.primaryContainer : scheme.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: locked || complete ? null : () => state.chooseSite(site),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? scheme.primary : scheme.outlineVariant,
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? scheme.primary.withValues(alpha: .12)
+                          : scheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(
+                      locked
+                          ? Icons.lock_outline
+                          : complete
+                          ? Icons.check_circle_outline
+                          : icon,
+                      color: selected ? scheme.primary : scheme.secondary,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (selected)
+                    Icon(Icons.radio_button_checked, color: scheme.primary)
+                  else if (complete)
+                    Icon(Icons.check_circle, color: scheme.tertiary)
+                  else if (locked)
+                    Icon(Icons.lock, color: scheme.outline, size: 18),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: complete ? 1 : ratio,
+                borderRadius: BorderRadius.circular(4),
+                color: complete ? scheme.tertiary : scheme.primary,
+                backgroundColor: scheme.surfaceContainerHighest,
+              ),
+            ],
+          ),
         ),
-        label: Text('$name\n$subtitle', textAlign: TextAlign.center),
-        onSelected: locked || complete ? null : (_) => state.chooseSite(site),
       ),
     );
   }
 
-  Widget _selectedSiteInfo(String site, CityState city, AppState state) {
+  Widget _selectedSiteCard(String site, CityState city, AppState state) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final progress = city.sites[site] ?? 0;
-    if (CityClient.housingSites.contains(site)) {
-      final remaining = 20 - progress % 20;
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(
-          '$progress Baumaterial · ${progress ~/ 20} Häuser fertig · '
-          '$remaining bis zum nächsten Haus.',
+    final residential = CityClient.housingSites.contains(site);
+    final building = CityClient.buildings[site];
+    final goal = residential ? 20 : building!.materials;
+    final invested = residential ? progress % 20 : progress;
+    final name = residential ? CityClient.housingNames[site]! : building!.name;
+    final details = residential
+        ? '$progress Materialien insgesamt · ${progress ~/ 20} Häuser fertig · '
+              '${goal - invested} bis zum nächsten Haus'
+        : '$progress/$goal Materialien · freigeschaltet ab '
+              '${building!.houses} Häusern · Fertigstellung kostet zusätzlich 5 Gloria';
+    return Card(
+      margin: const EdgeInsets.only(top: 12),
+      color: scheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.construction_outlined, color: scheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Text(
+                  '$invested/$goal',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: scheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: (invested / goal).clamp(0.0, 1.0).toDouble(),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(height: 6),
+            Text(details, style: theme.textTheme.bodySmall),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                SizedBox(
+                  width: 110,
+                  child: TextField(
+                    controller: _materials,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Material',
+                      hintText: '1–100',
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _invest,
+                    icon: const Icon(Icons.add_box_outlined),
+                    label: const Text('Einsetzen'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Ein Material kostet 4 Asse.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
-      );
-    }
-    final building = CityClient.buildings[site]!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        '$progress/${building.materials} Materialien. '
-        'Freigeschaltet ab ${building.houses} Häusern; '
-        'Fertigstellung kostet zusätzlich 5 Gloria.',
       ),
     );
   }
@@ -1366,7 +1732,10 @@ class _RomePanelState extends State<_RomePanel> {
   Future<void> _invest() async {
     final value = int.tryParse(_materials.text);
     if (value == null) {
-      widget.state.cityStatus = 'Wähle eine ganze Materialzahl von 1 bis 100.';
+      setState(() {
+        widget.state.cityStatus =
+            'Wähle eine ganze Materialzahl von 1 bis 100.';
+      });
       return;
     }
     try {
@@ -1374,6 +1743,80 @@ class _RomePanelState extends State<_RomePanel> {
     } on ApiException catch (error) {
       widget.state.cityStatus = error.message;
     }
+  }
+}
+
+class _GloriaBadge extends StatelessWidget {
+  const _GloriaBadge({required this.amount});
+
+  final int amount;
+
+  @override
+  Widget build(BuildContext context) {
+    final onPrimary = Theme.of(context).colorScheme.onPrimary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: onPrimary.withValues(alpha: .14),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: onPrimary.withValues(alpha: .3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.auto_awesome, color: onPrimary, size: 18),
+          const SizedBox(width: 6),
+          Text(
+            '$amount Gloria',
+            style: TextStyle(color: onPrimary, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CityMetric extends StatelessWidget {
+  const _CityMetric({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: scheme.primary),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              Text(label, style: Theme.of(context).textTheme.labelSmall),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'app_state.dart';
@@ -15,7 +16,6 @@ class WheelWidget extends StatefulWidget {
 }
 
 class _WheelWidgetState extends State<WheelWidget> {
-  String? _draggedRing;
   double? _lastAngle;
 
   @override
@@ -31,41 +31,42 @@ class _WheelWidgetState extends State<WheelWidget> {
           builder: (context, constraints) {
             final size = constraints.biggest.shortestSide;
             final textScale = size / 380;
-            return GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanStart: (details) {
-                final point = details.localPosition;
-                final center = Offset(size / 2, size / 2);
-                final distance = (point - center).distance / size * 200;
-                if (distance < 58 || distance > 102) return;
-                _draggedRing = distance > 78 ? 'A' : 'B';
-                _lastAngle = _angle(point, center);
-              },
-              onPanUpdate: (details) {
-                final ring = _draggedRing;
-                final last = _lastAngle;
-                if (ring == null || last == null) return;
-                final angle = _angle(
-                  details.localPosition,
-                  Offset(size / 2, size / 2),
-                );
-                var delta = angle - last;
-                if (delta > 180) delta -= 360;
-                if (delta < -180) delta += 360;
-                _lastAngle = angle;
-                state.rotateRing(ring, delta);
-              },
-              onPanEnd: (_) {
-                final ring = _draggedRing;
-                _draggedRing = null;
-                _lastAngle = null;
-                if (ring != null) state.finishRotation(ring);
-              },
-              onPanCancel: () {
-                final ring = _draggedRing;
-                _draggedRing = null;
-                _lastAngle = null;
-                if (ring != null) state.finishRotation(ring);
+            return RawGestureDetector(
+              gestures: {
+                _WheelRingGestureRecognizer:
+                    GestureRecognizerFactoryWithHandlers<
+                      _WheelRingGestureRecognizer
+                    >(_WheelRingGestureRecognizer.new, (recognizer) {
+                      recognizer
+                        ..wheelSize = size
+                        ..onStart = (ring, point) {
+                          _lastAngle = _angle(
+                            point,
+                            Offset(size / 2, size / 2),
+                          );
+                        }
+                        ..onUpdate = (ring, point) {
+                          final last = _lastAngle;
+                          if (last == null) return;
+                          final angle = _angle(
+                            point,
+                            Offset(size / 2, size / 2),
+                          );
+                          var delta = angle - last;
+                          if (delta > 180) delta -= 360;
+                          if (delta < -180) delta += 360;
+                          _lastAngle = angle;
+                          state.rotateRing(ring, delta);
+                        }
+                        ..onEnd = (ring) {
+                          _lastAngle = null;
+                          state.finishRotation(ring);
+                        }
+                        ..onCancel = (ring) {
+                          _lastAngle = null;
+                          state.finishRotation(ring);
+                        };
+                    }),
               },
               child: Stack(
                 alignment: Alignment.center,
@@ -98,6 +99,64 @@ class _WheelWidgetState extends State<WheelWidget> {
 
   double _angle(Offset point, Offset center) =>
       math.atan2(point.dx - center.dx, center.dy - point.dy) * 180 / math.pi;
+}
+
+class _WheelRingGestureRecognizer extends OneSequenceGestureRecognizer {
+  double wheelSize = 0;
+  void Function(String ring, Offset point)? onStart;
+  void Function(String ring, Offset point)? onUpdate;
+  void Function(String ring)? onEnd;
+  void Function(String ring)? onCancel;
+
+  int? _activePointer;
+  String? _activeRing;
+
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    if (_activePointer != null || wheelSize <= 0) return;
+    final center = Offset(wheelSize / 2, wheelSize / 2);
+    final radius = (event.localPosition - center).distance / wheelSize * 200;
+    if (radius < 58 || radius > 102) return;
+
+    _activePointer = event.pointer;
+    _activeRing = radius > 78 ? 'A' : 'B';
+    super.addAllowedPointer(event);
+    resolve(GestureDisposition.accepted);
+    onStart?.call(_activeRing!, event.localPosition);
+  }
+
+  @override
+  void handleEvent(PointerEvent event) {
+    if (event.pointer != _activePointer) return;
+    if (event is PointerMoveEvent) {
+      final ring = _activeRing;
+      if (ring != null) onUpdate?.call(ring, event.localPosition);
+    } else if (event is PointerUpEvent) {
+      _finish(event.pointer, cancelled: false);
+    } else if (event is PointerCancelEvent) {
+      _finish(event.pointer, cancelled: true);
+    }
+  }
+
+  void _finish(int pointer, {required bool cancelled}) {
+    final ring = _activeRing;
+    _activePointer = null;
+    _activeRing = null;
+    if (ring != null) {
+      if (cancelled) {
+        onCancel?.call(ring);
+      } else {
+        onEnd?.call(ring);
+      }
+    }
+    stopTrackingPointer(pointer);
+  }
+
+  @override
+  void didStopTrackingLastPointer(int pointer) {}
+
+  @override
+  String get debugDescription => 'wheelRingDrag';
 }
 
 class _WheelCenter extends StatelessWidget {
