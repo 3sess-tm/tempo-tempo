@@ -47,6 +47,7 @@ class AppState extends ChangeNotifier {
   String activeTab = 'practice';
   String activeWheelId = 'starter';
   String activeSkinId = 'pergament';
+  String selectedCity = 'rome';
   String selectedSite = '';
 
   List<String> ownedWheels = ['starter'];
@@ -123,10 +124,8 @@ class AppState extends ChangeNotifier {
   bool get wheelAligned =>
       _distance(outerRotation, -60.0 * selectedTense) < 4 &&
       _distance(innerRotation, -360 / data.verbs.length * selectedVerb) < 4;
-  int get houses => CityClient.housingSites.fold<int>(
-    0,
-    (sum, site) => sum + ((cityState?.sites[site] ?? 0) ~/ 20),
-  );
+  int get houses => cityState?.houses(selectedCity) ?? 0;
+  int get totalCityHouses => cityState?.totalHouses ?? 0;
   String get itemLabel {
     if (isNounMode) {
       final noun = data.nouns[selectedVerb];
@@ -250,6 +249,7 @@ class AppState extends ChangeNotifier {
       accountId = createAccountId();
       await _saveLeaderboardConfig();
     }
+    _restoreSelectedCity();
     selectedName = activeAccountName;
     selectedBoard = activeBoard;
 
@@ -995,6 +995,7 @@ class AppState extends ChangeNotifier {
       activeBoard = cleanBoard;
       if (account != null) {
         accountId = account.id;
+        _restoreSelectedCity();
         activeAccountName = account.name;
         earned = account.score;
         purse = account.score;
@@ -1004,6 +1005,7 @@ class AppState extends ChangeNotifier {
         leaderboardStatus = 'Willkommen zurück! Dein Guthaben wurde geladen.';
       } else {
         accountId = createAccountId();
+        _restoreSelectedCity();
         await _saveLeaderboardConfig();
         await _leaderboard.saveScore(
           board: activeBoard,
@@ -1095,12 +1097,17 @@ class AppState extends ChangeNotifier {
       return;
     }
     cityLoading = true;
-    cityStatus = 'Rom wird geladen …';
+    cityStatus = '${CityClient.definitions[selectedCity]!.name} wird geladen …';
     notifyListeners();
     try {
       final loaded = await _city.load(activeBoard, accountId);
       if (requestId != _cityRequestId) return;
       cityState = loaded;
+      if (!loaded.unlockedCities.contains(selectedCity)) {
+        selectedCity = loaded.unlockedCities.last;
+        selectedSite = '';
+        _saveSelectedCity();
+      }
       cityStatus = '';
     } on ApiException catch (error) {
       if (requestId != _cityRequestId) return;
@@ -1132,22 +1139,50 @@ class AppState extends ChangeNotifier {
         'Dein Kontostand konnte nicht synchronisiert werden. Bitte erneut versuchen.',
       );
     }
-    final previousHouses = houses;
+    final cityId = selectedCity;
+    final cityBefore = state.city(cityId);
+    if (cityBefore == null) {
+      throw const ApiException(
+        'Dieser Stadtstand konnte nicht geladen werden.',
+      );
+    }
+    final previousHouses = state.houses(cityId);
+    final previousUnlocked = state.unlockedCities.toSet();
     cityStatus = 'Material wird investiert …';
     notifyListeners();
     try {
       cityState = await _city.invest(
         board: activeBoard,
         id: accountId,
+        city: cityId,
         site: selectedSite,
         materials: materials,
       );
+      final cityAfter = cityState!.city(cityId)!;
       purse -= cost;
       await _save(_coinKey, '$purse');
-      final built = houses - previousHouses;
-      cityStatus = built > 0
+      final built = cityState!.houses(cityId) - previousHouses;
+      String? nextCity;
+      for (final city in CityClient.cityOrder) {
+        if (!previousUnlocked.contains(city) &&
+            cityState!.unlockedCities.contains(city)) {
+          nextCity = city;
+          break;
+        }
+      }
+      cityStatus = nextCity != null
+          ? '${CityClient.definitions[cityId]!.name} ist vollendet – '
+                '${CityClient.definitions[nextCity]!.name} ist freigeschaltet!'
+          : cityAfter.complete
+          ? '${CityClient.definitions[cityId]!.name} ist vollständig ausgebaut!'
+          : built > 0
           ? '$built ${built == 1 ? 'Haus ist' : 'Häuser sind'} fertig – Gloria verdient!'
           : '$materials ${materials == 1 ? 'Material wurde' : 'Materialien wurden'} eingelagert.';
+      if (nextCity != null) {
+        selectedCity = nextCity;
+        selectedSite = '';
+        _saveSelectedCity();
+      }
     } on ApiException catch (error) {
       cityStatus = error.message;
       rethrow;
@@ -1157,12 +1192,33 @@ class AppState extends ChangeNotifier {
   }
 
   void chooseSite(String site) {
-    if (!CityClient.housingSites.contains(site) &&
-        !CityClient.buildings.containsKey(site)) {
+    final definition = CityClient.definitions[selectedCity]!;
+    if (!definition.housingSites.contains(site) &&
+        !definition.buildings.containsKey(site)) {
       return;
     }
     selectedSite = site;
     notifyListeners();
+  }
+
+  void selectCity(String city) {
+    if (cityState?.unlockedCities.contains(city) != true) return;
+    if (selectedCity == city) return;
+    selectedCity = city;
+    selectedSite = '';
+    _saveSelectedCity();
+    notifyListeners();
+  }
+
+  void _restoreSelectedCity() {
+    final saved = _store?.read('tempo-city-selected-$accountId');
+    selectedCity = CityClient.definitions.containsKey(saved) ? saved! : 'rome';
+  }
+
+  void _saveSelectedCity() {
+    final store = _store;
+    if (store == null || accountId.isEmpty) return;
+    unawaited(store.write('tempo-city-selected-$accountId', selectedCity));
   }
 
   void tickCity(bool visible) {
@@ -1179,7 +1235,7 @@ class AppState extends ChangeNotifier {
     }
     if (previous == null) return;
     final elapsed = now.difference(previous).inMilliseconds.clamp(0, 15000);
-    cityTaxRemainderMilliseconds += elapsed * houses;
+    cityTaxRemainderMilliseconds += elapsed * totalCityHouses;
     final tax = cityTaxRemainderMilliseconds ~/ 3600000;
     if (tax <= 0) {
       unawaited(

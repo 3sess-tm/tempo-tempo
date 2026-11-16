@@ -154,7 +154,7 @@ class _TempoHomeState extends State<TempoHome> {
     ('identify', 'Bestimmen', Icons.manage_search),
     ('my-verbs', 'Meine Verben', Icons.add_circle_outline),
     ('shop', 'Shop', Icons.storefront),
-    ('rome', 'Rom', Icons.account_balance),
+    ('rome', 'Städte', Icons.map_outlined),
     ('leaderboard', 'Rangliste', Icons.leaderboard),
     ('help', 'Hilfe', Icons.help_outline),
   ];
@@ -1321,78 +1321,133 @@ class _RomePanelState extends State<_RomePanel> {
   Widget build(BuildContext context) {
     final state = widget.state;
     final city = state.cityState;
-    final sites = [...CityClient.housingSites, ...CityClient.buildings.keys];
+    final cityId = state.selectedCity;
+    final definition = CityClient.definitions[cityId]!;
+    final progress = city?.city(cityId);
+    final completeBuildings = definition.buildings.keys
+        .where(
+          (id) =>
+              (progress?.sites[id] ?? 0) >= definition.buildings[id]!.materials,
+        )
+        .length;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final cityTitle = Row(
-      children: [
-        Container(
-          width: 54,
-          height: 54,
-          decoration: BoxDecoration(
-            color: scheme.onPrimary.withValues(alpha: .14),
-            shape: BoxShape.circle,
-            border: Border.all(color: scheme.onPrimary.withValues(alpha: .35)),
-          ),
-          child: Icon(Icons.account_balance, color: scheme.onPrimary, size: 30),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Dein Rom',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: scheme.onPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                state.activeAccountName.isEmpty
-                    ? 'Eine Stadt, die mit deinen Übungen wächst.'
-                    : 'Gespeichert für ${state.activeAccountName}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: scheme.onPrimary.withValues(alpha: .88),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+    final cityColor = _cityColor(cityId);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [scheme.primary, scheme.tertiary],
-            ),
-            borderRadius: BorderRadius.circular(20),
+            color: cityColor,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: cityColor.withValues(alpha: .2),
+                blurRadius: 16,
+                offset: const Offset(0, 7),
+              ),
+            ],
           ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final badge = _GloriaBadge(amount: city?.currency ?? 0);
-              if (constraints.maxWidth < 400) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [cityTitle, const SizedBox(height: 12), badge],
-                );
-              }
-              return Row(
+          child: Stack(
+            children: [
+              Positioned(
+                right: -14,
+                bottom: -34,
+                child: Icon(
+                  _cityEmblem(cityId),
+                  size: 150,
+                  color: Colors.white.withValues(alpha: .07),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: cityTitle),
-                  const SizedBox(width: 8),
-                  badge,
+                  Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .14),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: .35),
+                          ),
+                        ),
+                        child: Icon(
+                          _cityEmblem(cityId),
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              definition.name,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Text(
+                              definition.subtitle,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: .86),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (city != null) _GloriaBadge(amount: city.currency),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          state.activeAccountName.isEmpty
+                              ? 'Deine Stadt wächst mit jeder Übung.'
+                              : 'Aufbau für ${state.activeAccountName}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: .86),
+                          ),
+                        ),
+                      ),
+                      if (city != null)
+                        Text(
+                          '$completeBuildings / 5 Wahrzeichen',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (city != null) ...[
+                    const SizedBox(height: 7),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: completeBuildings / 5,
+                        minHeight: 7,
+                        color: const Color(0xFFFFD98A),
+                        backgroundColor: Colors.white.withValues(alpha: .18),
+                      ),
+                    ),
+                  ],
                 ],
-              );
-            },
+              ),
+            ],
           ),
         ),
+        const SizedBox(height: 14),
+        _cityJourney(state, city),
         if (state.cityStatus.isNotEmpty) ...[
           const SizedBox(height: 10),
           Card(
@@ -1401,7 +1456,10 @@ class _RomePanelState extends State<_RomePanel> {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: scheme.onSecondaryContainer),
+                  Icon(
+                    Icons.auto_awesome_outlined,
+                    color: scheme.onSecondaryContainer,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(child: Text(state.cityStatus)),
                 ],
@@ -1427,7 +1485,7 @@ class _RomePanelState extends State<_RomePanel> {
                   Text(
                     state.activeAccountName.isEmpty
                         ? 'Melde dich zuerst über die Rangliste an, um dein Rom anzulegen.'
-                        : 'Dein Stadtplan wartet darauf, geladen zu werden.',
+                        : 'Der Stadtplan von ${definition.name} wartet darauf, geladen zu werden.',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
@@ -1449,6 +1507,22 @@ class _RomePanelState extends State<_RomePanel> {
           )
         else ...[
           const SizedBox(height: 12),
+          if (progress?.complete == true)
+            Card(
+              color: scheme.tertiaryContainer,
+              child: ListTile(
+                leading: Icon(
+                  Icons.emoji_events_outlined,
+                  color: scheme.onTertiaryContainer,
+                ),
+                title: Text('${definition.name} ist vollendet!'),
+                subtitle: Text(
+                  cityId == CityClient.cityOrder.last
+                      ? 'Das Reich hat seinen letzten großen Bauplatz vollendet.'
+                      : 'Alle Wahrzeichen stehen. Die nächste Stadt ist bereit.',
+                ),
+              ),
+            ),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -1460,12 +1534,12 @@ class _RomePanelState extends State<_RomePanel> {
               ),
               _CityMetric(
                 icon: Icons.construction_outlined,
-                value: '${city.progress}',
+                value: '${progress?.progress ?? 0}',
                 label: 'Material gesamt',
               ),
               _CityMetric(
                 icon: Icons.trending_up,
-                value: '${state.houses}',
+                value: '${state.totalCityHouses}',
                 label: 'Asse pro Stunde',
               ),
             ],
@@ -1489,80 +1563,200 @@ class _RomePanelState extends State<_RomePanel> {
             ],
           ),
           Text(
-            'Wähle einen Bauplatz und investiere Material, um Rom wachsen zu lassen.',
+            'Tippe auf einen Bauplatz. Wohnhäuser füllen sich mit jedem Ausbau sichtbar.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: scheme.outlineVariant),
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 760
-                    ? 3
-                    : constraints.maxWidth >= 500
-                    ? 2
-                    : 1;
-                final gap = 10.0;
-                final tileWidth =
-                    (constraints.maxWidth - gap * (columns - 1)) / columns;
-                return Wrap(
-                  spacing: gap,
-                  runSpacing: gap,
-                  children: [
-                    for (final site in sites)
-                      SizedBox(
-                        width: tileWidth,
-                        child: _citySiteCard(site, city, state),
-                      ),
-                  ],
-                );
-              },
+          _InteractiveCityMap(
+            key: ValueKey('map-$cityId'),
+            cityId: cityId,
+            definition: definition,
+            progress: progress,
+            selectedSite: state.selectedSite,
+            onSelect: state.chooseSite,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Bauplätze',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
           ),
+          const SizedBox(height: 8),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 760
+                  ? 3
+                  : constraints.maxWidth >= 500
+                  ? 2
+                  : 1;
+              const gap = 10.0;
+              final tileWidth =
+                  (constraints.maxWidth - gap * (columns - 1)) / columns;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final site in [
+                    ...definition.housingSites,
+                    ...definition.buildings.keys,
+                  ])
+                    SizedBox(
+                      width: tileWidth,
+                      child: _citySiteCard(site, definition, progress, state),
+                    ),
+                ],
+              );
+            },
+          ),
           if (state.selectedSite.isNotEmpty)
-            _selectedSiteCard(state.selectedSite, city, state),
+            _selectedSiteCard(state.selectedSite, definition, progress, state),
         ],
       ],
     );
   }
 
-  Widget _citySiteCard(String site, CityState city, AppState state) {
+  Widget _cityJourney(AppState state, CityState? city) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final residential = CityClient.housingSites.contains(site);
-    final progress = city.sites[site] ?? 0;
-    final building = CityClient.buildings[site];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Deine Reise durchs Reich',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 108,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: CityClient.cityOrder.length,
+            separatorBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Icon(Icons.chevron_right, color: scheme.outline),
+            ),
+            itemBuilder: (context, index) {
+              final id = CityClient.cityOrder[index];
+              final definition = CityClient.definitions[id]!;
+              final unlocked =
+                  city?.unlockedCities.contains(id) ?? id == 'rome';
+              final selected = state.selectedCity == id;
+              final complete = city?.city(id)?.complete ?? false;
+              return SizedBox(
+                width: 132,
+                child: Material(
+                  color: selected
+                      ? scheme.primaryContainer
+                      : scheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(15),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(15),
+                    onTap: unlocked ? () => state.selectCity(id) : null,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: selected
+                              ? scheme.primary
+                              : scheme.outlineVariant,
+                          width: selected ? 2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 35,
+                            height: 35,
+                            decoration: BoxDecoration(
+                              color: _cityColor(id).withValues(alpha: .13),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              unlocked
+                                  ? complete
+                                        ? Icons.check
+                                        : _cityEmblem(id)
+                                  : Icons.lock_outline,
+                              color: _cityColor(id),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  definition.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  complete
+                                      ? 'Vollendet'
+                                      : unlocked
+                                      ? 'Erkunden'
+                                      : 'Nach ${CityClient.definitions[CityClient.cityOrder[index - 1]]!.name}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: unlocked
+                                        ? scheme.onSurfaceVariant
+                                        : scheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _citySiteCard(
+    String site,
+    CityDefinition definition,
+    CityProgress? city,
+    AppState state,
+  ) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final residential = definition.housingSites.contains(site);
+    final progress = city?.sites[site] ?? 0;
+    final building = definition.buildings[site];
     final locked = building != null && state.houses < building.houses;
-    final complete = building != null && progress >= building.materials;
+    final capacity = residential ? 400 : building!.materials;
+    final complete = progress >= capacity;
     final buildingHouses = building?.houses ?? 0;
-    final buildingMaterials = building?.materials ?? 1;
-    final name = residential ? CityClient.housingNames[site]! : building!.name;
+    final name = residential ? definition.housingNames[site]! : building!.name;
     final selected = state.selectedSite == site;
-    final invested = residential ? progress % 20 : progress;
-    final goal = residential ? 20 : buildingMaterials;
+    final invested = progress;
+    final goal = capacity;
     final ratio = (invested / goal).clamp(0.0, 1.0).toDouble();
     final subtitle = residential
-        ? '${progress ~/ 20} ${progress ~/ 20 == 1 ? 'Haus' : 'Häuser'}'
+        ? '${progress ~/ 20} / 20 Häuser · ${progress % 20} / 20 Material'
         : complete
         ? 'Errichtet'
         : locked
         ? 'Ab $buildingHouses Häusern'
-        : '$progress/$buildingMaterials Material';
-    final icon = residential
-        ? Icons.location_city_outlined
-        : switch (site) {
-            'forum' => Icons.account_balance_outlined,
-            'thermae' => Icons.bathtub_outlined,
-            'colosseum' => Icons.stadium_outlined,
-            'circus' => Icons.flag_outlined,
-            'pantheon' => Icons.temple_buddhist_outlined,
-            _ => Icons.foundation_outlined,
-          };
+        : '$progress/$capacity Material';
+    final icon = _siteIcon(site, residential);
     return Material(
       color: selected ? scheme.primaryContainer : scheme.surface,
       borderRadius: BorderRadius.circular(14),
@@ -1642,19 +1836,26 @@ class _RomePanelState extends State<_RomePanel> {
     );
   }
 
-  Widget _selectedSiteCard(String site, CityState city, AppState state) {
+  Widget _selectedSiteCard(
+    String site,
+    CityDefinition definition,
+    CityProgress? progress,
+    AppState state,
+  ) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final progress = city.sites[site] ?? 0;
-    final residential = CityClient.housingSites.contains(site);
-    final building = CityClient.buildings[site];
-    final goal = residential ? 20 : building!.materials;
-    final invested = residential ? progress % 20 : progress;
-    final name = residential ? CityClient.housingNames[site]! : building!.name;
+    final invested = progress?.sites[site] ?? 0;
+    final residential = definition.housingSites.contains(site);
+    final building = definition.buildings[site];
+    final goal = residential ? 400 : building!.materials;
+    final name = residential ? definition.housingNames[site]! : building!.name;
+    final locked = building != null && state.houses < building.houses;
     final details = residential
-        ? '$progress Materialien insgesamt · ${progress ~/ 20} Häuser fertig · '
-              '${goal - invested} bis zum nächsten Haus'
-        : '$progress/$goal Materialien · freigeschaltet ab '
+        ? invested >= goal
+              ? 'Wohnviertel vollständig ausgebaut · 20 Häuser fertig'
+              : '$invested/400 Materialien · ${invested ~/ 20} von 20 Häusern '
+                    'fertig · ${20 - invested % 20} Material bis zum nächsten Haus'
+        : '$invested/$goal Materialien · freigeschaltet ab '
               '${building!.houses} Häusern · Fertigstellung kostet zusätzlich 5 Gloria';
     return Card(
       margin: const EdgeInsets.only(top: 12),
@@ -1709,7 +1910,9 @@ class _RomePanelState extends State<_RomePanel> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: _invest,
+                    onPressed: state.cityLoading || invested >= goal || locked
+                        ? null
+                        : _invest,
                     icon: const Icon(Icons.add_box_outlined),
                     label: const Text('Einsetzen'),
                   ),
@@ -1744,6 +1947,508 @@ class _RomePanelState extends State<_RomePanel> {
       widget.state.cityStatus = error.message;
     }
   }
+}
+
+class _InteractiveCityMap extends StatelessWidget {
+  const _InteractiveCityMap({
+    required this.cityId,
+    required this.definition,
+    required this.progress,
+    required this.selectedSite,
+    required this.onSelect,
+    super.key,
+  });
+
+  final String cityId;
+  final CityDefinition definition;
+  final CityProgress? progress;
+  final String selectedSite;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .06),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final height = width / 1.42;
+          return SizedBox(
+            width: width,
+            height: height,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CustomPaint(
+                    painter: _CityMapPainter(
+                      cityId: cityId,
+                      definition: definition,
+                      sites: progress?.sites ?? const {},
+                      color: _cityColor(cityId),
+                    ),
+                  ),
+                  Positioned(
+                    left: 10,
+                    top: 9,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.surface.withValues(alpha: .88),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.explore_outlined,
+                            size: 15,
+                            color: _cityColor(cityId),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            definition.latinName,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(fontStyle: FontStyle.italic),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  for (final spot in _mapSpots())
+                    Positioned(
+                      left: spot.point.dx * width - 18,
+                      top: spot.point.dy * height - 18,
+                      child: _MapSiteMarker(
+                        cityId: cityId,
+                        site: spot.site,
+                        icon: spot.icon,
+                        selected: selectedSite == spot.site,
+                        progress: progress?.sites[spot.site] ?? 0,
+                        goal: definition.housingSites.contains(spot.site)
+                            ? 400
+                            : definition.buildings[spot.site]!.materials,
+                        onTap: () => onSelect(spot.site),
+                      ),
+                    ),
+                  Positioned(
+                    right: 10,
+                    top: 9,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.surface.withValues(alpha: .88),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Tippe auf ein Symbol',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  List<_MapSpot> _mapSpots() {
+    const homes = [
+      Offset(.14, .72),
+      Offset(.32, .82),
+      Offset(.51, .72),
+      Offset(.69, .82),
+      Offset(.87, .70),
+    ];
+    const landmarks = [
+      Offset(.18, .30),
+      Offset(.35, .39),
+      Offset(.51, .27),
+      Offset(.68, .39),
+      Offset(.84, .29),
+    ];
+    final spots = <_MapSpot>[];
+    for (var index = 0; index < definition.housingSites.length; index++) {
+      spots.add(
+        _MapSpot(
+          site: definition.housingSites[index],
+          point: homes[index],
+          icon: Icons.home_work_outlined,
+        ),
+      );
+    }
+    for (var index = 0; index < definition.buildings.keys.length; index++) {
+      final site = definition.buildings.keys.elementAt(index);
+      spots.add(
+        _MapSpot(
+          site: site,
+          point: landmarks[index],
+          icon: _siteIcon(site, false),
+        ),
+      );
+    }
+    return spots;
+  }
+}
+
+class _MapSpot {
+  const _MapSpot({required this.site, required this.point, required this.icon});
+
+  final String site;
+  final Offset point;
+  final IconData icon;
+}
+
+class _MapSiteMarker extends StatelessWidget {
+  const _MapSiteMarker({
+    required this.cityId,
+    required this.site,
+    required this.icon,
+    required this.selected,
+    required this.progress,
+    required this.goal,
+    required this.onTap,
+  });
+
+  final String cityId;
+  final String site;
+  final IconData icon;
+  final bool selected;
+  final int progress;
+  final int goal;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _cityColor(cityId);
+    final scheme = Theme.of(context).colorScheme;
+    final complete = progress >= goal;
+    final name =
+        CityClient.definitions[cityId]!.housingNames[site] ??
+        CityClient.definitions[cityId]!.buildings[site]!.name;
+    return Tooltip(
+      message: '$name · $progress/$goal',
+      child: Semantics(
+        button: true,
+        label: '$name, Ausbau $progress von $goal',
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox.expand(
+                  child: CircularProgressIndicator(
+                    value: (progress / goal).clamp(0.0, 1.0).toDouble(),
+                    strokeWidth: selected ? 3 : 2,
+                    backgroundColor: scheme.surface.withValues(alpha: .7),
+                    color: complete ? scheme.tertiary : color,
+                  ),
+                ),
+                Container(
+                  width: selected ? 28 : 25,
+                  height: selected ? 28 : 25,
+                  decoration: BoxDecoration(
+                    color: selected ? color : scheme.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .18),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    complete ? Icons.check : icon,
+                    size: 15,
+                    color: selected ? Colors.white : color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CityMapPainter extends CustomPainter {
+  const _CityMapPainter({
+    required this.cityId,
+    required this.definition,
+    required this.sites,
+    required this.color,
+  });
+
+  final String cityId;
+  final CityDefinition definition;
+  final Map<String, int> sites;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bounds = Offset.zero & size;
+    canvas.drawRect(bounds, Paint()..color = const Color(0xFFD8E1B7));
+
+    final fields = Paint()
+      ..color = const Color(0xFFE6D9A9).withValues(alpha: .48);
+    for (var index = 0; index < 7; index++) {
+      final x = (index * 83.0 + 26) % size.width;
+      final y = (index * 51.0 + 24) % size.height;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(x, y), width: 40, height: 21),
+          const Radius.circular(9),
+        ),
+        fields,
+      );
+    }
+
+    _drawRiver(canvas, size);
+    _drawRoads(canvas, size);
+
+    for (var index = 0; index < definition.housingSites.length; index++) {
+      final site = definition.housingSites[index];
+      final point = _homePoints[index];
+      _drawNeighborhood(
+        canvas,
+        Offset(point.dx * size.width, point.dy * size.height),
+        (sites[site] ?? 0) / 400,
+      );
+    }
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: definition.latinName.toUpperCase(),
+        style: TextStyle(
+          color: color.withValues(alpha: .35),
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 2,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    textPainter.paint(
+      canvas,
+      Offset((size.width - textPainter.width) / 2, size.height - 22),
+    );
+  }
+
+  static const _homePoints = [
+    Offset(.14, .72),
+    Offset(.32, .82),
+    Offset(.51, .72),
+    Offset(.69, .82),
+    Offset(.87, .70),
+  ];
+
+  void _drawRiver(Canvas canvas, Size size) {
+    final path = Path();
+    if (cityId == 'rome') {
+      path
+        ..moveTo(size.width * .92, -10)
+        ..cubicTo(
+          size.width * .63,
+          size.height * .18,
+          size.width * .98,
+          size.height * .57,
+          size.width * .66,
+          size.height + 10,
+        );
+    } else if (cityId == 'trier') {
+      path
+        ..moveTo(size.width * .08, -10)
+        ..cubicTo(
+          size.width * .39,
+          size.height * .17,
+          size.width * .03,
+          size.height * .46,
+          size.width * .31,
+          size.height + 10,
+        );
+    } else {
+      path
+        ..moveTo(size.width * .72, -10)
+        ..cubicTo(
+          size.width * .45,
+          size.height * .12,
+          size.width * .88,
+          size.height * .58,
+          size.width * .58,
+          size.height + 10,
+        );
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF87B9BF)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.width * .09
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFFB4D4D1).withValues(alpha: .65)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.width * .012
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  void _drawRoads(Canvas canvas, Size size) {
+    final road = Paint()
+      ..color = const Color(0xFFF4E8C8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * .021
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final line = Paint()
+      ..color = const Color(0xFFC7AE7C).withValues(alpha: .75)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * .004
+      ..strokeCap = StrokeCap.round;
+    final main = Path()
+      ..moveTo(size.width * .06, size.height * .56)
+      ..cubicTo(
+        size.width * .28,
+        size.height * .48,
+        size.width * .47,
+        size.height * .55,
+        size.width * .94,
+        size.height * .48,
+      );
+    canvas.drawPath(main, road);
+    canvas.drawPath(main, line);
+    for (var index = 0; index < _homePoints.length; index++) {
+      final point = _homePoints[index];
+      final branch = Path()
+        ..moveTo(point.dx * size.width, point.dy * size.height)
+        ..quadraticBezierTo(
+          point.dx * size.width,
+          size.height * .59,
+          size.width * (.18 + index * .16),
+          size.height * .55,
+        );
+      canvas.drawPath(branch, road);
+      canvas.drawPath(branch, line);
+    }
+  }
+
+  void _drawNeighborhood(Canvas canvas, Offset anchor, double ratio) {
+    const houseOffsets = [
+      Offset(-18, 12),
+      Offset(-6, 18),
+      Offset(7, 12),
+      Offset(18, 18),
+      Offset(-11, 28),
+      Offset(4, 29),
+    ];
+    for (var index = 0; index < houseOffsets.length; index++) {
+      final fraction = (ratio * houseOffsets.length - index).clamp(0.0, 1.0);
+      _drawHouse(canvas, anchor + houseOffsets[index], fraction);
+    }
+  }
+
+  void _drawHouse(Canvas canvas, Offset center, double progress) {
+    const width = 8.0;
+    const height = 7.0;
+    final wall = Rect.fromCenter(
+      center: center + const Offset(0, 2),
+      width: width,
+      height: height,
+    );
+    final roof = Path()
+      ..moveTo(center.dx - width / 2 - 1, center.dy - 1)
+      ..lineTo(center.dx, center.dy - height / 2 - 2)
+      ..lineTo(center.dx + width / 2 + 1, center.dy - 1)
+      ..close();
+    final wallColor = Color.lerp(
+      const Color(0xFFAAA38C),
+      Color.lerp(const Color(0xFF6D8B56), const Color(0xFF456C46), progress)!,
+      progress,
+    )!;
+    final roofColor = Color.lerp(
+      const Color(0xFF9B775B),
+      const Color(0xFF814C3A),
+      progress,
+    )!;
+    canvas.drawRect(wall, Paint()..color = wallColor);
+    canvas.drawPath(roof, Paint()..color = roofColor);
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: center + const Offset(0, 2),
+        width: width * .18,
+        height: height * .38,
+      ),
+      Paint()..color = const Color(0xFFF4D897).withValues(alpha: progress),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CityMapPainter oldDelegate) =>
+      cityId != oldDelegate.cityId ||
+      sites != oldDelegate.sites ||
+      color != oldDelegate.color;
+}
+
+Color _cityColor(String cityId) => switch (cityId) {
+  'rome' => const Color(0xFF8A4535),
+  'trier' => const Color(0xFF496C65),
+  'verona' => const Color(0xFF9C5C43),
+  _ => const Color(0xFF70584A),
+};
+
+IconData _cityEmblem(String cityId) => switch (cityId) {
+  'rome' => Icons.account_balance,
+  'trier' => Icons.architecture,
+  'verona' => Icons.stadium_outlined,
+  _ => Icons.location_city,
+};
+
+IconData _siteIcon(String site, bool residential) {
+  if (residential) return Icons.home_work_outlined;
+  return switch (site) {
+    'forum' => Icons.account_balance_outlined,
+    'thermae' || 'thermae-trier' => Icons.bathtub_outlined,
+    'colosseum' || 'amphitheater' => Icons.stadium_outlined,
+    'circus' => Icons.flag_outlined,
+    'pantheon' || 'basilica' => Icons.temple_buddhist_outlined,
+    'porta-nigra' || 'porta-borsari' || 'arco-gavi' => Icons.architecture,
+    'roemerbruecke' || 'ponte-pietra' => Icons.alt_route,
+    'arena' => Icons.stadium_outlined,
+    'teatro-romano' => Icons.theater_comedy_outlined,
+    _ => Icons.foundation_outlined,
+  };
 }
 
 class _GloriaBadge extends StatelessWidget {

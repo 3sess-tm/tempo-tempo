@@ -4,34 +4,137 @@ const json = (o, s = 200) => new Response(JSON.stringify(o), {
 
 const CITY_MATERIAL_PRICE = 4;
 const CITY_HOUSE_MATERIALS = 20;
-const CITY_HOUSING_SITES = ['insula-1', 'insula-2', 'insula-3', 'insula-4', 'insula-5'];
-const CITY_BUILDINGS = [
-  { id: 'forum', name: 'Forum Romanum', houses: 5, materials: 100 },
-  { id: 'thermae', name: 'Thermen', houses: 15, materials: 200 },
-  { id: 'colosseum', name: 'Kolosseum', houses: 30, materials: 300 },
-  { id: 'circus', name: 'Circus Maximus', houses: 50, materials: 400 },
-  { id: 'pantheon', name: 'Pantheon', houses: 80, materials: 500 }
-];
+const CITY_ORDER = ['rome', 'trier', 'verona'];
+const CITY_DEFINITIONS = {
+  rome: {
+    houses: ['insula-1', 'insula-2', 'insula-3', 'insula-4', 'insula-5'],
+    buildings: [
+      { id: 'forum', houses: 5, materials: 100 },
+      { id: 'thermae', houses: 15, materials: 200 },
+      { id: 'colosseum', houses: 30, materials: 300 },
+      { id: 'circus', houses: 50, materials: 400 },
+      { id: 'pantheon', houses: 80, materials: 500 }
+    ]
+  },
+  trier: {
+    houses: ['vicus-1', 'vicus-2', 'vicus-3', 'vicus-4', 'vicus-5'],
+    buildings: [
+      { id: 'porta-nigra', houses: 5, materials: 100 },
+      { id: 'thermae-trier', houses: 15, materials: 200 },
+      { id: 'amphitheater', houses: 30, materials: 300 },
+      { id: 'basilica', houses: 50, materials: 400 },
+      { id: 'roemerbruecke', houses: 80, materials: 500 }
+    ]
+  },
+  verona: {
+    houses: ['borgo-1', 'borgo-2', 'borgo-3', 'borgo-4', 'borgo-5'],
+    buildings: [
+      { id: 'arena', houses: 5, materials: 100 },
+      { id: 'porta-borsari', houses: 15, materials: 200 },
+      { id: 'teatro-romano', houses: 30, materials: 300 },
+      { id: 'ponte-pietra', houses: 50, materials: 400 },
+      { id: 'arco-gavi', houses: 80, materials: 500 }
+    ]
+  }
+};
 
-function citySitesFor(account) {
-  let sites;
-  try { sites = JSON.parse(account.city_sites || '{}'); } catch { sites = null; }
-  if (sites && typeof sites === 'object' && !Array.isArray(sites) &&
-      [...CITY_HOUSING_SITES, ...CITY_BUILDINGS.map(building => building.id)]
-        .every(id => Number.isSafeInteger(sites[id]) && sites[id] >= 0))
-    return sites;
+function citySiteIds(cityId) {
+  const definition = CITY_DEFINITIONS[cityId];
+  return [...definition.houses, ...definition.buildings.map(building => building.id)];
+}
 
-  sites = Object.fromEntries([...CITY_HOUSING_SITES, ...CITY_BUILDINGS.map(building => building.id)].map(id => [id, 0]));
+function emptyCitySites(cityId) {
+  return Object.fromEntries(citySiteIds(cityId).map(id => [id, 0]));
+}
+
+function isValidCitySites(cityId, sites) {
+  return sites && typeof sites === 'object' && !Array.isArray(sites) &&
+    citySiteIds(cityId).every(id => {
+      const limit = CITY_DEFINITIONS[cityId].houses.includes(id)
+        ? 400
+        : CITY_DEFINITIONS[cityId].buildings.find(building => building.id === id).materials;
+      return Number.isSafeInteger(sites[id]) && sites[id] >= 0 && sites[id] <= limit;
+    });
+}
+
+function legacyRomeSites(account, legacy) {
+  if (isValidCitySites('rome', legacy)) return legacy;
+  const sites = emptyCitySites('rome');
   let remaining = account.city_progress;
-  for (const id of CITY_HOUSING_SITES) {
+  for (const id of CITY_DEFINITIONS.rome.houses) {
     const investment = Math.min(remaining, 400);
     sites[id] = investment;
     remaining -= investment;
   }
-  const legacyBuildings = Math.min(CITY_BUILDINGS.length,
+  const legacyBuildings = Math.min(CITY_DEFINITIONS.rome.buildings.length,
     Math.floor((Math.floor(account.city_progress / CITY_HOUSE_MATERIALS) - account.city_currency) / 5));
-  CITY_BUILDINGS.slice(0, Math.max(0, legacyBuildings)).forEach(building => { sites[building.id] = building.materials; });
+  CITY_DEFINITIONS.rome.buildings.slice(0, Math.max(0, legacyBuildings))
+    .forEach(building => { sites[building.id] = building.materials; });
   return sites;
+}
+
+function cityWorldFor(account) {
+  let saved;
+  try { saved = JSON.parse(account.city_sites || '{}'); } catch { saved = null; }
+  if (saved && saved.version === 1) {
+    if (!saved.cities || typeof saved.cities !== 'object' || Array.isArray(saved.cities))
+      throw new Error('Stored city world has an invalid shape.');
+    const cities = {};
+    for (const cityId of CITY_ORDER) {
+      const sites = saved.cities[cityId]?.sites;
+      if (!isValidCitySites(cityId, sites))
+        throw new Error(`Stored ${cityId} progress is invalid.`);
+      cities[cityId] = { sites };
+    }
+    return { version: 1, cities };
+  }
+  return {
+    version: 1,
+    cities: {
+      rome: { sites: legacyRomeSites(account, saved) },
+      trier: { sites: emptyCitySites('trier') },
+      verona: { sites: emptyCitySites('verona') }
+    }
+  };
+}
+
+function cityHouses(cityId, sites) {
+  return CITY_DEFINITIONS[cityId].houses.reduce(
+    (sum, site) => sum + Math.floor(sites[site] / CITY_HOUSE_MATERIALS), 0);
+}
+
+function cityComplete(cityId, sites) {
+  return CITY_DEFINITIONS[cityId].buildings.every(
+    building => sites[building.id] >= building.materials);
+}
+
+function unlockedCities(world) {
+  const unlocked = ['rome'];
+  for (let index = 1; index < CITY_ORDER.length; index++) {
+    const previous = CITY_ORDER[index - 1];
+    if (!cityComplete(previous, world.cities[previous].sites)) break;
+    unlocked.push(CITY_ORDER[index]);
+  }
+  return unlocked;
+}
+
+function cityResponse(account, world) {
+  const cities = {};
+  for (const cityId of CITY_ORDER) {
+    const sites = world.cities[cityId].sites;
+    cities[cityId] = {
+      progress: Object.values(sites).reduce((sum, value) => sum + value, 0),
+      sites,
+      complete: cityComplete(cityId, sites)
+    };
+  }
+  return {
+    progress: account.city_progress,
+    currency: account.city_currency,
+    sites: cities.rome.sites,
+    cities,
+    unlockedCities: unlockedCities(world)
+  };
 }
 
 async function cityApi(req, env, url) {
@@ -47,11 +150,10 @@ async function cityApi(req, env, url) {
     'SELECT score, city_progress, city_currency, city_sites FROM scores WHERE board = ? AND id = ?'
   ).bind(board, id).first();
   if (!account) return json({ error: 'account' }, 404);
-  const sites = citySitesFor(account);
-  const houses = CITY_HOUSING_SITES.reduce((sum, site) => sum + Math.floor(sites[site] / CITY_HOUSE_MATERIALS), 0);
+  const world = cityWorldFor(account);
 
   if (req.method === 'GET')
-    return json({ progress: account.city_progress, currency: account.city_currency, sites });
+    return json(cityResponse(account, world));
 
   let body;
   try { body = await req.json(); } catch { return json({ error: 'json' }, 400); }
@@ -59,15 +161,21 @@ async function cityApi(req, env, url) {
     return json({ error: 'invalid' }, 400);
 
   if (body.action === 'invest') {
+    const cityId = body.city;
+    if (!CITY_ORDER.includes(cityId)) return json({ error: 'city' }, 400);
+    if (!unlockedCities(world).includes(cityId)) return json({ error: 'city_locked' }, 409);
     const site = body.site;
     const materials = body.materials;
-    const building = CITY_BUILDINGS.find(candidate => candidate.id === site);
-    const housingSite = CITY_HOUSING_SITES.includes(site);
+    const definition = CITY_DEFINITIONS[cityId];
+    const sites = world.cities[cityId].sites;
+    const building = definition.buildings.find(candidate => candidate.id === site);
+    const housingSite = definition.houses.includes(site);
     const currentInvestment = sites[site];
     const capacity = housingSite ? 400 : building?.materials;
     if (!Number.isSafeInteger(materials) || materials < 1 || materials > 100 ||
         (!housingSite && !building) || currentInvestment + materials > capacity)
       return json({ error: 'investment' }, 400);
+    const houses = cityHouses(cityId, sites);
     if (building && houses < building.houses)
       return json({ error: 'locked' }, 409);
 
@@ -88,12 +196,18 @@ async function cityApi(req, env, url) {
     if (progress * CITY_MATERIAL_PRICE > account.score)
       return json({ error: 'balance' }, 409);
 
-    const updatedSites = { ...sites, [site]: newInvestment };
+    const updatedWorld = {
+      ...world,
+      cities: {
+        ...world.cities,
+        [cityId]: { sites: { ...sites, [site]: newInvestment } }
+      }
+    };
     const result = await env.DB.prepare(
       `UPDATE scores SET city_progress = ?1, city_currency = ?2, city_sites = ?3
        WHERE board = ?4 AND id = ?5 AND city_progress = ?6 AND city_currency = ?7
          AND city_sites = ?8 AND score >= ?1 * ?9`
-    ).bind(progress, newCurrency, JSON.stringify(updatedSites), board, id, account.city_progress,
+    ).bind(progress, newCurrency, JSON.stringify(updatedWorld), board, id, account.city_progress,
       account.city_currency, account.city_sites || '{}', CITY_MATERIAL_PRICE).run();
     if (!result.meta.changes) return json({ error: 'conflict' }, 409);
   } else {
@@ -103,7 +217,7 @@ async function cityApi(req, env, url) {
   const updated = await env.DB.prepare(
     'SELECT city_progress, city_currency, city_sites FROM scores WHERE board = ? AND id = ?'
   ).bind(board, id).first();
-  return json({ progress: updated.city_progress, currency: updated.city_currency, sites: citySitesFor(updated) });
+  return json(cityResponse(updated, cityWorldFor(updated)));
 }
 
 export default {

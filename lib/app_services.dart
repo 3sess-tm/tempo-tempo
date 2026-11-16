@@ -192,20 +192,97 @@ class LeaderboardClient {
 
 class CityState {
   const CityState({
-    required this.progress,
     required this.currency,
+    required this.cities,
+    required this.unlockedCities,
+  });
+
+  final int currency;
+  final Map<String, CityProgress> cities;
+  final List<String> unlockedCities;
+
+  CityProgress? city(String id) => cities[id];
+
+  int houses(String id) {
+    final progress = city(id);
+    final definition = CityClient.definitions[id];
+    if (progress == null || definition == null) return 0;
+    return definition.housingSites.fold<int>(
+      0,
+      (sum, site) => sum + ((progress.sites[site] ?? 0) ~/ 20),
+    );
+  }
+
+  int get totalHouses =>
+      cities.keys.fold(0, (total, cityId) => total + houses(cityId));
+
+  factory CityState.fromJson(Map<String, dynamic> json) {
+    if (json['currency'] is! int || json['currency'] < 0) {
+      throw const ApiException('Ungültige Stadtdaten.');
+    }
+    final rawCities = json['cities'];
+    final cities = <String, CityProgress>{};
+    if (rawCities is Map<String, dynamic>) {
+      for (final entry in rawCities.entries) {
+        if (!CityClient.definitions.containsKey(entry.key) ||
+            entry.value is! Map<String, dynamic>) {
+          throw const ApiException('Ungültiger Stadtstand.');
+        }
+        cities[entry.key] = CityProgress.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    } else {
+      final legacySites = json['sites'];
+      if (legacySites is! Map<String, dynamic>) {
+        throw const ApiException('Ungültige Stadtdaten.');
+      }
+      cities['rome'] = CityProgress.fromJson({
+        'sites': legacySites,
+        'progress': json['progress'] ?? 0,
+        'complete': false,
+      });
+    }
+    if (!cities.containsKey('rome')) {
+      throw const ApiException('Der römische Stadtstand fehlt.');
+    }
+    final rawUnlocked = json['unlockedCities'];
+    final unlocked = rawUnlocked is List
+        ? rawUnlocked.whereType<String>().toList()
+        : <String>['rome'];
+    if (unlocked.isEmpty ||
+        unlocked.first != 'rome' ||
+        unlocked.length > CityClient.cityOrder.length ||
+        unlocked.asMap().entries.any(
+          (entry) => entry.value != CityClient.cityOrder[entry.key],
+        )) {
+      throw const ApiException('Ungültiger Freischaltstand der Städte.');
+    }
+    return CityState(
+      currency: json['currency'] as int,
+      cities: cities,
+      unlockedCities: unlocked,
+    );
+  }
+}
+
+class CityProgress {
+  const CityProgress({
+    required this.progress,
     required this.sites,
+    required this.complete,
   });
 
   final int progress;
-  final int currency;
   final Map<String, int> sites;
+  final bool complete;
 
-  factory CityState.fromJson(Map<String, dynamic> json) {
+  factory CityProgress.fromJson(Map<String, dynamic> json) {
     if (json['progress'] is! int ||
-        json['currency'] is! int ||
-        json['sites'] is! Map<String, dynamic>) {
-      throw const ApiException('Ungültige Stadtdaten.');
+        json['progress'] < 0 ||
+        json['sites'] is! Map<String, dynamic> ||
+        json['complete'] is! bool) {
+      throw const ApiException('Ungültiger Baufortschritt.');
     }
     final sites = <String, int>{};
     for (final entry in (json['sites'] as Map<String, dynamic>).entries) {
@@ -214,12 +291,44 @@ class CityState {
       }
       sites[entry.key] = entry.value as int;
     }
-    return CityState(
+    return CityProgress(
       progress: json['progress'] as int,
-      currency: json['currency'] as int,
       sites: sites,
+      complete: json['complete'] as bool,
     );
   }
+}
+
+class CityDefinition {
+  const CityDefinition({
+    required this.id,
+    required this.name,
+    required this.subtitle,
+    required this.latinName,
+    required this.housingSites,
+    required this.housingNames,
+    required this.buildings,
+  });
+
+  final String id;
+  final String name;
+  final String subtitle;
+  final String latinName;
+  final List<String> housingSites;
+  final Map<String, String> housingNames;
+  final Map<String, CityBuilding> buildings;
+}
+
+class CityBuilding {
+  const CityBuilding({
+    required this.name,
+    required this.houses,
+    required this.materials,
+  });
+
+  final String name;
+  final int houses;
+  final int materials;
 }
 
 class CityClient {
@@ -227,26 +336,125 @@ class CityClient {
 
   final http.Client _client;
 
-  static const housingSites = [
-    'insula-1',
-    'insula-2',
-    'insula-3',
-    'insula-4',
-    'insula-5',
-  ];
-  static const buildings = {
-    'forum': (name: 'Forum Romanum', houses: 5, materials: 100),
-    'thermae': (name: 'Thermen', houses: 15, materials: 200),
-    'colosseum': (name: 'Kolosseum', houses: 30, materials: 300),
-    'circus': (name: 'Circus Maximus', houses: 50, materials: 400),
-    'pantheon': (name: 'Pantheon', houses: 80, materials: 500),
-  };
-  static const housingNames = {
-    'insula-1': 'Vicus Tiber',
-    'insula-2': 'Subura',
-    'insula-3': 'Esquilin',
-    'insula-4': 'Aventin',
-    'insula-5': 'Palatin',
+  static const cityOrder = ['rome', 'trier', 'verona'];
+  static const definitions = {
+    'rome': CityDefinition(
+      id: 'rome',
+      name: 'Rom',
+      subtitle: 'Die Ewige Stadt',
+      latinName: 'Roma Aeterna',
+      housingSites: [
+        'insula-1',
+        'insula-2',
+        'insula-3',
+        'insula-4',
+        'insula-5',
+      ],
+      housingNames: {
+        'insula-1': 'Vicus Tiber',
+        'insula-2': 'Subura',
+        'insula-3': 'Esquilin',
+        'insula-4': 'Aventin',
+        'insula-5': 'Palatin',
+      },
+      buildings: {
+        'forum': CityBuilding(name: 'Forum Romanum', houses: 5, materials: 100),
+        'thermae': CityBuilding(name: 'Thermen', houses: 15, materials: 200),
+        'colosseum': CityBuilding(
+          name: 'Kolosseum',
+          houses: 30,
+          materials: 300,
+        ),
+        'circus': CityBuilding(
+          name: 'Circus Maximus',
+          houses: 50,
+          materials: 400,
+        ),
+        'pantheon': CityBuilding(name: 'Pantheon', houses: 80, materials: 500),
+      },
+    ),
+    'trier': CityDefinition(
+      id: 'trier',
+      name: 'Trier',
+      subtitle: 'Augusta Treverorum',
+      latinName: 'Augusta Treverorum',
+      housingSites: ['vicus-1', 'vicus-2', 'vicus-3', 'vicus-4', 'vicus-5'],
+      housingNames: {
+        'vicus-1': 'Moselviertel',
+        'vicus-2': 'Altbachtal',
+        'vicus-3': 'Petrisberg',
+        'vicus-4': 'Marktviertel',
+        'vicus-5': 'Barbarathermen',
+      },
+      buildings: {
+        'porta-nigra': CityBuilding(
+          name: 'Porta Nigra',
+          houses: 5,
+          materials: 100,
+        ),
+        'thermae-trier': CityBuilding(
+          name: 'Kaiserthermen',
+          houses: 15,
+          materials: 200,
+        ),
+        'amphitheater': CityBuilding(
+          name: 'Amphitheater',
+          houses: 30,
+          materials: 300,
+        ),
+        'basilica': CityBuilding(
+          name: 'Konstantinbasilika',
+          houses: 50,
+          materials: 400,
+        ),
+        'roemerbruecke': CityBuilding(
+          name: 'Römerbrücke',
+          houses: 80,
+          materials: 500,
+        ),
+      },
+    ),
+    'verona': CityDefinition(
+      id: 'verona',
+      name: 'Verona',
+      subtitle: 'Die Stadt an der Etsch',
+      latinName: 'Verona Augusta',
+      housingSites: ['borgo-1', 'borgo-2', 'borgo-3', 'borgo-4', 'borgo-5'],
+      housingNames: {
+        'borgo-1': 'Borgo Trento',
+        'borgo-2': 'San Zeno',
+        'borgo-3': 'Ponte Pietra',
+        'borgo-4': 'Veronetta',
+        'borgo-5': 'Porta Borsari',
+      },
+      buildings: {
+        'arena': CityBuilding(
+          name: 'Arena di Verona',
+          houses: 5,
+          materials: 100,
+        ),
+        'porta-borsari': CityBuilding(
+          name: 'Porta Borsari',
+          houses: 15,
+          materials: 200,
+        ),
+        'teatro-romano': CityBuilding(
+          name: 'Teatro Romano',
+          houses: 30,
+          materials: 300,
+        ),
+        'ponte-pietra': CityBuilding(
+          name: 'Ponte Pietra',
+          houses: 50,
+          materials: 400,
+        ),
+        'arco-gavi': CityBuilding(
+          name: 'Arco dei Gavi',
+          houses: 80,
+          materials: 500,
+        ),
+      },
+    ),
   };
 
   Future<CityState> load(String board, String id) async {
@@ -259,13 +467,19 @@ class CityClient {
   Future<CityState> invest({
     required String board,
     required String id,
+    required String city,
     required String site,
     required int materials,
   }) async {
     final data = await _request(
       Uri(path: '/api/city', queryParameters: {'board': board, 'id': id}),
       method: 'POST',
-      body: {'action': 'invest', 'site': site, 'materials': materials},
+      body: {
+        'action': 'invest',
+        'city': city,
+        'site': site,
+        'materials': materials,
+      },
     );
     return CityState.fromJson(data);
   }
@@ -308,6 +522,8 @@ class CityClient {
 
   String _cityError(Object? error) => switch (error) {
     'account' => 'Das Konto wurde nicht gefunden.',
+    'city' => 'Diese Stadt ist unbekannt.',
+    'city_locked' => 'Diese Stadt ist noch nicht freigeschaltet.',
     'locked' => 'Dieser Bauplatz ist noch gesperrt.',
     'gloria' => 'Für dieses besondere Gebäude benötigst du 5 Gloria.',
     'balance' =>

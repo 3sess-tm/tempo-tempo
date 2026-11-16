@@ -29,6 +29,9 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
+      - name: Test city progression API
+        run: node --test test/worker_city_test.mjs
+
       - name: Build Flutter web app
         run: flutter build web --no-wasm-dry-run
 

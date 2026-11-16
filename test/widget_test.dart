@@ -69,14 +69,48 @@ void main() {
 
     final state = tester.widget<TempoHome>(find.byType(TempoHome)).state;
     state.activeTab = 'rome';
-    state.cityState = const CityState(progress: 0, currency: 12, sites: {});
+    state.cityState = const CityState(
+      currency: 12,
+      cities: {
+        'rome': CityProgress(
+          progress: 3100,
+          sites: {
+            'insula-1': 400,
+            'insula-2': 400,
+            'insula-3': 400,
+            'insula-4': 400,
+            'insula-5': 0,
+            'forum': 100,
+            'thermae': 200,
+            'colosseum': 300,
+            'circus': 400,
+            'pantheon': 500,
+          },
+          complete: true,
+        ),
+        'trier': CityProgress(progress: 0, sites: {}, complete: false),
+      },
+      unlockedCities: ['rome', 'trier'],
+    );
     state.notifyListeners();
     await tester.pump();
 
-    expect(find.text('Dein Rom'), findsOneWidget);
+    expect(find.text('Rom'), findsWidgets);
     expect(find.text('Stadtplan'), findsOneWidget);
     expect(find.text('Vicus Tiber'), findsOneWidget);
     expect(find.text('Forum Romanum'), findsOneWidget);
+    final trier = find.text('Trier');
+    await tester.ensureVisible(trier);
+    await tester.tap(trier);
+    await tester.pump();
+    expect(find.text('Augusta Treverorum'), findsWidgets);
+    expect(find.text('Porta Nigra'), findsOneWidget);
+
+    final verona = find.text('Verona');
+    await tester.ensureVisible(verona);
+    await tester.tap(verona);
+    await tester.pump();
+    expect(find.text('Augusta Treverorum'), findsWidgets);
     final layoutError = tester.takeException();
     expect(layoutError, isNull);
   });
