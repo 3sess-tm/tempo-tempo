@@ -107,7 +107,7 @@ npx wrangler d1 create tempo-lb
 - `public/data/shop.json`: kaufbare Radpakete und Skin-Paletten
 - `public/data/nouns.json`: Substantive mit vollständigen Kasus- und Numerusformen
 
-Im Reiter **Städte** kaufen angemeldete Spieler Baumaterial mit Assen und investieren es auf einer interaktiven Karte. Die Haus-Silhouetten füllen sich entsprechend dem Ausbau. 20 Materialien (80 Asse) ergeben ein Haus. Fertige Häuser geben je 1 Gloria; freigeschaltete Wahrzeichen kosten bei Fertigstellung zusätzlich 5 Gloria. Häuser erzeugen je 1 As Steuer pro Stunde, solange die Seite sichtbar geöffnet ist.
+Im Reiter **Städte** kaufen angemeldete Spieler Baumaterial mit Assen und investieren es auf einer interaktiven Karte. Die Haus-Silhouetten füllen sich entsprechend dem Ausbau. 20 Materialien (80 Asse) ergeben ein Haus. Fertige Häuser geben je 1 Gloria; freigeschaltete Wahrzeichen kosten bei Fertigstellung zusätzlich 5 Gloria. Häuser erzeugen je 1 As Steuer pro Stunde, solange die Seite sichtbar geöffnet ist. Die Windows-Desktop-App verbindet sich für Rangliste und Städte mit dem veröffentlichten Backend unter `tempo-tempo.cozmo-city.com`; im Web bleibt die API auf derselben Domain.
 
 Die Stadtreise führt durch **Rom**, **Trier** und **Verona**. Nach Fertigstellung aller fünf Wahrzeichen einer Stadt wird automatisch die nächste freigeschaltet; das letzte Wahrzeichen wird jeweils erst ab 80 Häusern freigeschaltet. Gloria und die steuerfinanzierten Asse sind städteübergreifend, Baufortschritt und Wohnviertel bleiben je Stadt getrennt. Bestehende römische Bauplätze und Gloria bleiben erhalten.
 

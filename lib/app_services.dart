@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -7,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'platform_storage_stub.dart'
     if (dart.library.js_interop) 'platform_storage_web.dart'
     as browser;
+
+const _apiRequestTimeout = Duration(seconds: 15);
 
 class LocalStore {
   LocalStore(this._preferences);
@@ -96,7 +99,7 @@ class LeaderboardClient {
 
   Future<List<LeaderboardEntry>> load(String board) async {
     final data = await _request(
-      Uri(path: '/api/lb', queryParameters: {'board': board}),
+      browser.apiUri('/api/lb', queryParameters: {'board': board}),
     );
     final rows = data['rows'];
     if (rows is! List) {
@@ -114,7 +117,10 @@ class LeaderboardClient {
 
   Future<LeaderboardAccount?> findAccount(String board, String name) async {
     final data = await _request(
-      Uri(path: '/api/lb', queryParameters: {'board': board, 'name': name}),
+      browser.apiUri(
+        '/api/lb',
+        queryParameters: {'board': board, 'name': name},
+      ),
     );
     final account = data['account'];
     if (account == null) return null;
@@ -138,7 +144,7 @@ class LeaderboardClient {
     required int score,
   }) async {
     await _request(
-      Uri(path: '/api/lb'),
+      browser.apiUri('/api/lb'),
       method: 'POST',
       body: {'board': board, 'id': id, 'name': name, 'score': score},
     );
@@ -152,15 +158,21 @@ class LeaderboardClient {
     final http.Response response;
     try {
       response = method == 'POST'
-          ? await _client.post(
-              uri,
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode(body),
-            )
-          : await _client.get(uri);
+          ? await _client
+                .post(
+                  uri,
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode(body),
+                )
+                .timeout(_apiRequestTimeout)
+          : await _client.get(uri).timeout(_apiRequestTimeout);
     } on http.ClientException catch (error) {
       throw ApiException(
         'Die Rangliste ist nicht erreichbar: ${error.message}',
+      );
+    } on TimeoutException {
+      throw const ApiException(
+        'Die Rangliste antwortet nicht. Bitte später erneut versuchen.',
       );
     }
     final Object? decoded;
@@ -459,7 +471,7 @@ class CityClient {
 
   Future<CityState> load(String board, String id) async {
     final data = await _request(
-      Uri(path: '/api/city', queryParameters: {'board': board, 'id': id}),
+      browser.apiUri('/api/city', queryParameters: {'board': board, 'id': id}),
     );
     return CityState.fromJson(data);
   }
@@ -472,7 +484,7 @@ class CityClient {
     required int materials,
   }) async {
     final data = await _request(
-      Uri(path: '/api/city', queryParameters: {'board': board, 'id': id}),
+      browser.apiUri('/api/city', queryParameters: {'board': board, 'id': id}),
       method: 'POST',
       body: {
         'action': 'invest',
@@ -492,14 +504,20 @@ class CityClient {
     final http.Response response;
     try {
       response = method == 'POST'
-          ? await _client.post(
-              uri,
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode(body),
-            )
-          : await _client.get(uri);
+          ? await _client
+                .post(
+                  uri,
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode(body),
+                )
+                .timeout(_apiRequestTimeout)
+          : await _client.get(uri).timeout(_apiRequestTimeout);
     } on http.ClientException catch (error) {
       throw ApiException('Die Stadt ist nicht erreichbar: ${error.message}');
+    } on TimeoutException {
+      throw const ApiException(
+        'Die Stadt antwortet nicht. Bitte später erneut versuchen.',
+      );
     }
     final Object? decoded;
     try {
