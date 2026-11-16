@@ -9,6 +9,35 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'app_services.dart';
 import 'game_data.dart';
 
+class CoinBreakdown {
+  const CoinBreakdown({
+    required this.aurei,
+    required this.denarii,
+    required this.sestertii,
+    required this.asses,
+  });
+
+  factory CoinBreakdown.fromAsses(int asses) {
+    var remainder = asses;
+    final aurei = remainder ~/ 400;
+    remainder %= 400;
+    final denarii = remainder ~/ 16;
+    remainder %= 16;
+    final sestertii = remainder ~/ 4;
+    return CoinBreakdown(
+      aurei: aurei,
+      denarii: denarii,
+      sestertii: sestertii,
+      asses: remainder % 4,
+    );
+  }
+
+  final int aurei;
+  final int denarii;
+  final int sestertii;
+  final int asses;
+}
+
 class AppState extends ChangeNotifier {
   static const _coinKey = 'drehscheibe-asse';
   static const _earnedKey = 'drehscheibe-verdient';
@@ -443,6 +472,7 @@ class AppState extends ChangeNotifier {
       final lost = min(_maxTries, purse);
       purse -= lost;
       unawaited(_save(_coinKey, '$purse'));
+      _markLeaderboardDirty();
       _showPracticeSolution(
         goals.first,
         'Auch der $_maxTries. Versuch war falsch. '
@@ -612,6 +642,7 @@ class AppState extends ChangeNotifier {
       final lost = min(_maxTries, purse);
       purse -= lost;
       unawaited(_save(_coinKey, '$purse'));
+      _markLeaderboardDirty();
       _onWrong(question);
       identificationDone = true;
       setWheel(solution.verb, solution.tense, solution.person);
@@ -752,6 +783,7 @@ class AppState extends ChangeNotifier {
   Future<void> emptyPurse() async {
     purse = 0;
     await _save(_coinKey, '0');
+    _markLeaderboardDirty();
     notifyListeners();
   }
 
@@ -881,6 +913,7 @@ class AppState extends ChangeNotifier {
     purse -= wheel.price;
     ownedWheels.add(id);
     await _save(_coinKey, '$purse');
+    _markLeaderboardDirty();
     await _saveShop();
     shopStatus = '${wheel.name} freigeschaltet.';
     notifyListeners();
@@ -900,6 +933,7 @@ class AppState extends ChangeNotifier {
     purse -= skin.price;
     ownedSkins.add(id);
     await _save(_coinKey, '$purse');
+    _markLeaderboardDirty();
     await _saveShop();
     shopStatus = '${skin.name} freigeschaltet.';
     notifyListeners();
@@ -998,7 +1032,7 @@ class AppState extends ChangeNotifier {
         _restoreSelectedCity();
         activeAccountName = account.name;
         earned = account.score;
-        purse = account.score;
+        purse = account.balance;
         await _save(_coinKey, '$purse');
         await _save(_earnedKey, '$earned');
         await _saveLeaderboardConfig();
@@ -1012,6 +1046,7 @@ class AppState extends ChangeNotifier {
           id: accountId,
           name: activeAccountName,
           score: earned,
+          balance: purse,
         );
         leaderboardStatus = 'Konto angelegt – dein Guthaben wurde gespeichert.';
       }
@@ -1080,6 +1115,7 @@ class AppState extends ChangeNotifier {
         id: accountId,
         name: activeAccountName,
         score: earned,
+        balance: purse,
       );
     } on ApiException catch (error) {
       leaderboardStatus = error.message;
@@ -1103,6 +1139,16 @@ class AppState extends ChangeNotifier {
       final loaded = await _city.load(activeBoard, accountId);
       if (requestId != _cityRequestId) return;
       cityState = loaded;
+      final pendingEarned = max(0, earned - loaded.earned);
+      earned = max(earned, loaded.earned);
+      purse = min(purse, loaded.balance + pendingEarned);
+      await _save(_coinKey, '$purse');
+      await _save(_earnedKey, '$earned');
+      try {
+        await flushScore();
+      } on ApiException catch (error) {
+        leaderboardStatus = error.message;
+      }
       if (!loaded.unlockedCities.contains(selectedCity)) {
         selectedCity = loaded.unlockedCities.last;
         selectedSite = '';
@@ -1159,7 +1205,7 @@ class AppState extends ChangeNotifier {
         materials: materials,
       );
       final cityAfter = cityState!.city(cityId)!;
-      purse -= cost;
+      purse = cityState!.balance;
       await _save(_coinKey, '$purse');
       final built = cityState!.houses(cityId) - previousHouses;
       String? nextCity;

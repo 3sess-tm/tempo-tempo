@@ -2,11 +2,17 @@
 
 Ein kleines Latein-Lernspiel mit einer interaktiven Konjugationsscheibe, Übungen, optional eigenen Verben und einer gemeinsamen Rangliste. Das Frontend wird als statische Cloudflare-Assets ausgeliefert; der Cloudflare Worker stellt die Ranglisten-API bereit und speichert sie in D1.
 
-Wohnviertel und Sonderbauten werden in `city_sites` gespeichert. Bestehende Spielstände aus der bisherigen Rom-Version werden beim ersten Stadt-API-Aufruf automatisch als Rom übernommen. Falls eine Datenbank noch nicht die Spalte `city_sites` hat, die Migration einmalig ausführen:
+Wohnviertel und Sonderbauten werden in `city_sites` gespeichert. Bestehende Spielstände aus der bisherigen Rom-Version werden beim ersten Stadt-API-Aufruf automatisch als Rom übernommen. Für bestehende Datenbanken die noch nicht ausgeführten Migrationen der Reihe nach anwenden:
 
 ```sh
+npx wrangler d1 execute tempo-lb --remote --file=./migrations/0002_city.sql
 npx wrangler d1 execute tempo-lb --remote --file=./migrations/0003_city_sites.sql
+npx wrangler d1 execute tempo-lb --remote --file=./migrations/0004_wallet_balance.sql
 ```
+
+Die Wallet-Migration ergänzt das verfügbare Guthaben und setzt es aus dem Gesamtverdienst abzüglich der bereits investierten Stadtmaterialien auf. Frühere Shop-Ausgaben sind in der alten Datenbank nicht erfasst und können dabei nicht rekonstruiert werden. Die Migration vor dem Deploy des aktualisierten Workers ausführen.
+
+Wenn die Datenbank bereits `0003_city_sites.sql` enthält, nur `0004_wallet_balance.sql` ausführen; abgeschlossene Migrationen nicht wiederholen.
 
 ## Downloads und Nightly-Builds
 
@@ -69,9 +75,10 @@ Wenn eine Datenbank bereits mit dem vorherigen Schema läuft, einmalig die Stadt
 ```sh
 npx wrangler d1 execute tempo-lb --local --file=./migrations/0002_city.sql
 npx wrangler d1 execute tempo-lb --local --file=./migrations/0003_city_sites.sql
+npx wrangler d1 execute tempo-lb --local --file=./migrations/0004_wallet_balance.sql
 ```
 
-Bei einer Datenbank, auf der die erste Rom-Version schon läuft, nur die neue Migration ausführen: `npx wrangler d1 execute tempo-lb --remote --file=./migrations/0003_city_sites.sql`. Die Migrationen sind jeweils einmal pro Datenbank auszuführen. Neu angelegte Datenbanken erhalten alle Spalten direkt über `schema.sql`.
+Bei einer Datenbank, auf der die erste Rom-Version schon läuft, die Migrationen `0003_city_sites.sql` und `0004_wallet_balance.sql` ausführen. Die Migrationen sind jeweils einmal pro Datenbank auszuführen. Neu angelegte Datenbanken erhalten alle Spalten direkt über `schema.sql`.
 
 ## Cloudflare einrichten und veröffentlichen
 
@@ -97,6 +104,7 @@ npx wrangler d1 create tempo-lb
 - `schema.sql`: D1-Schema
 - `migrations/0002_city.sql`: einmalige Migration für vorhandene D1-Datenbanken
 - `migrations/0003_city_sites.sql`: einmalige Migration für gespeicherte Bauplätze auf der Rom-Karte
+- `migrations/0004_wallet_balance.sql`: einmalige Migration des verfügbaren Guthabens
 - `wrangler.toml`: Worker-, Assets- und D1-Konfiguration
 - `lib/main.dart`: Flutter-Oberfläche und Browser-Einstieg
 - `lib/app_state.dart`: Spielzustand und Belohnungslogik
@@ -107,11 +115,11 @@ npx wrangler d1 create tempo-lb
 - `public/data/shop.json`: kaufbare Radpakete und Skin-Paletten
 - `public/data/nouns.json`: Substantive mit vollständigen Kasus- und Numerusformen
 
-Im Reiter **Städte** kaufen angemeldete Spieler Baumaterial mit Assen und investieren es auf einer interaktiven Karte. Die Haus-Silhouetten füllen sich entsprechend dem Ausbau. 20 Materialien (80 Asse) ergeben ein Haus. Fertige Häuser geben je 1 Gloria; freigeschaltete Wahrzeichen kosten bei Fertigstellung zusätzlich 5 Gloria. Häuser erzeugen je 1 As Steuer pro Stunde, solange die Seite sichtbar geöffnet ist. Die Windows-Desktop-App verbindet sich für Rangliste und Städte mit dem veröffentlichten Backend unter `tempo-tempo.cozmo-city.com`; im Web bleibt die API auf derselben Domain.
+Im Reiter **Städte** kaufen angemeldete Spieler Baumaterial mit Assen und investieren es auf einer interaktiven Karte. Stadtinvestitionen werden direkt vom serverseitig gespeicherten verfügbaren Guthaben abgezogen. Die Haus-Silhouetten füllen sich entsprechend dem Ausbau. 20 Materialien (80 Asse) ergeben ein Haus. Fertige Häuser geben je 1 Gloria; freigeschaltete Wahrzeichen kosten bei Fertigstellung zusätzlich 5 Gloria. Häuser erzeugen je 1 As Steuer pro Stunde, solange die Seite sichtbar geöffnet ist. Die Windows-Desktop-App verbindet sich für Rangliste und Städte mit dem veröffentlichten Backend unter `tempo-tempo.cozmo-city.com`; im Web bleibt die API auf derselben Domain.
 
 Die Stadtreise führt durch **Rom**, **Trier** und **Verona**. Nach Fertigstellung aller fünf Wahrzeichen einer Stadt wird automatisch die nächste freigeschaltet; das letzte Wahrzeichen wird jeweils erst ab 80 Häusern freigeschaltet. Gloria und die steuerfinanzierten Asse sind städteübergreifend, Baufortschritt und Wohnviertel bleiben je Stadt getrennt. Bestehende römische Bauplätze und Gloria bleiben erhalten.
 
-Der Shop bietet drei zusätzliche Verb-Räder und drei kaufbare Skins. Käufe und Ausrüstung werden lokal im Browser gespeichert und sind nicht zwischen Geräten synchronisiert. Bei der Rangliste meldet „Mitmachen“ mit Klassencode und Spitzname am vorhandenen Konto an oder legt ein neues an. Bei einer erneuten Anmeldung wird das Asse-Guthaben mit dem gespeicherten Ranglistenstand synchronisiert; lokaler Shop-Besitz bleibt auf das jeweilige Gerät beschränkt. Ausgaben senken nur das verfügbare Guthaben; die Rangliste zählt weiterhin alle verdienten Asse.
+Der Shop bietet drei zusätzliche Verb-Räder und drei kaufbare Skins. Käufe und Ausrüstung werden lokal im Browser gespeichert und sind nicht zwischen Geräten synchronisiert. Bei der Rangliste meldet „Mitmachen“ mit Klassencode und Spitzname am vorhandenen Konto an oder legt ein neues an. Gesamtverdienst und verfügbares Guthaben werden separat synchronisiert; eine erneute Anmeldung lädt das gespeicherte Guthaben. Die Rangliste zeigt zusätzlich den insgesamt investierten Stadtfortschritt in Materialien.
 
 Das Layout passt sich kleinen Bildschirmen an: Die Drehscheibe lässt sich einklappen. Ein automatischer Dunkelmodus folgt der Systemeinstellung; Vollbild und Drucken verwenden die Browserfunktionen.
 
@@ -124,7 +132,7 @@ Die Spielbereiche sind auch direkt verlinkbar: `#practice`, `#identify`, `#my-ve
 ```sh
 flutter analyze --fatal-infos
 flutter test
-node --test test/worker_city_test.mjs
+node --test test/worker_city_test.mjs test/worker_wallet_test.mjs
 flutter build web --no-wasm-dry-run
 ```
 

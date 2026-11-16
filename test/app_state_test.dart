@@ -6,6 +6,15 @@ import 'package:tempo_tempo/game_data.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('25 denarii convert to one aureus', () {
+    final coins = CoinBreakdown.fromAsses(28 * 16);
+
+    expect(coins.aurei, 1);
+    expect(coins.denarii, 3);
+    expect(coins.sestertii, 0);
+    expect(coins.asses, 0);
+  });
+
   test(
     'wheel dragging avoids notifying the whole app on each update',
     () async {

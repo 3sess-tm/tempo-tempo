@@ -469,13 +469,7 @@ class _WalletCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var remainder = state.purse;
-    final aurei = remainder ~/ 1600;
-    remainder %= 1600;
-    final denarii = remainder ~/ 16;
-    remainder %= 16;
-    final sestertii = remainder ~/ 4;
-    final asses = remainder % 4;
+    final coins = CoinBreakdown.fromAsses(state.purse);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -504,26 +498,26 @@ class _WalletCard extends StatelessWidget {
                 _CoinCount(
                   symbol: 'I',
                   color: const Color(0xFFD5A943),
-                  count: aurei,
-                  label: 'Aurei',
+                  count: coins.aurei,
+                  label: coins.aurei == 1 ? 'Aureus' : 'Aurei',
                 ),
                 _CoinCount(
                   symbol: 'XVI',
                   color: const Color(0xFFA8B0B5),
-                  count: denarii,
-                  label: 'Denare',
+                  count: coins.denarii,
+                  label: coins.denarii == 1 ? 'Denar' : 'Denare',
                 ),
                 _CoinCount(
                   symbol: 'IV',
                   color: const Color(0xFFB87343),
-                  count: sestertii,
-                  label: 'Sesterzen',
+                  count: coins.sestertii,
+                  label: coins.sestertii == 1 ? 'Sesterz' : 'Sesterzen',
                 ),
                 _CoinCount(
                   symbol: 'I',
                   color: const Color(0xFF80614D),
-                  count: asses,
-                  label: 'Asse',
+                  count: coins.asses,
+                  label: coins.asses == 1 ? 'As' : 'Asse',
                 ),
               ],
             ),
@@ -2615,6 +2609,9 @@ class _LeaderboardPanelState extends State<_LeaderboardPanel> {
                   rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '$rank.',
                 ),
                 title: Text(row.name),
+                subtitle: Text(
+                  'Stadtfortschritt: ${row.cityProgress} Materialien',
+                ),
                 trailing: Text('${row.score} Asse'),
               );
             }),

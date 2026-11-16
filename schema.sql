@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS scores (
   id      TEXT NOT NULL,
   name    TEXT NOT NULL,
   score   INTEGER NOT NULL,
+  balance INTEGER NOT NULL DEFAULT 0,
   updated INTEGER NOT NULL,
   city_progress  INTEGER NOT NULL DEFAULT 0,
   city_currency  INTEGER NOT NULL DEFAULT 0,

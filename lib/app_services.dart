@@ -78,18 +78,27 @@ class ApiException implements Exception {
 }
 
 class LeaderboardEntry {
-  const LeaderboardEntry(this.name, this.score);
+  const LeaderboardEntry(this.name, this.score, {this.cityProgress = 0});
 
   final String name;
   final int score;
+  final int cityProgress;
 }
 
 class LeaderboardAccount {
-  const LeaderboardAccount(this.id, this.name, this.score);
+  const LeaderboardAccount(
+    this.id,
+    this.name,
+    this.score, {
+    required this.balance,
+    this.cityProgress = 0,
+  });
 
   final String id;
   final String name;
   final int score;
+  final int balance;
+  final int cityProgress;
 }
 
 class LeaderboardClient {
@@ -108,10 +117,15 @@ class LeaderboardClient {
     return rows.map((row) {
       if (row is! Map<String, dynamic> ||
           row['name'] is! String ||
-          row['score'] is! int) {
+          row['score'] is! int ||
+          row['city_progress'] is! int) {
         throw const ApiException('Ungültiger Ranglisteneintrag.');
       }
-      return LeaderboardEntry(row['name'] as String, row['score'] as int);
+      return LeaderboardEntry(
+        row['name'] as String,
+        row['score'] as int,
+        cityProgress: row['city_progress'] as int,
+      );
     }).toList();
   }
 
@@ -127,13 +141,17 @@ class LeaderboardClient {
     if (account is! Map<String, dynamic> ||
         account['id'] is! String ||
         account['name'] is! String ||
-        account['score'] is! int) {
+        account['score'] is! int ||
+        account['balance'] is! int ||
+        account['city_progress'] is! int) {
       throw const ApiException('Ungültige Kontodaten.');
     }
     return LeaderboardAccount(
       account['id'] as String,
       account['name'] as String,
       account['score'] as int,
+      balance: account['balance'] as int,
+      cityProgress: account['city_progress'] as int,
     );
   }
 
@@ -142,11 +160,18 @@ class LeaderboardClient {
     required String id,
     required String name,
     required int score,
+    required int balance,
   }) async {
     await _request(
       browser.apiUri('/api/lb'),
       method: 'POST',
-      body: {'board': board, 'id': id, 'name': name, 'score': score},
+      body: {
+        'board': board,
+        'id': id,
+        'name': name,
+        'score': score,
+        'balance': balance,
+      },
     );
   }
 
@@ -198,6 +223,7 @@ class LeaderboardClient {
     'board' => 'Der Klassencode ist ungültig.',
     'name' => 'Der Spitzname ist ungültig.',
     'invalid' => 'Die Kontodaten sind ungültig.',
+    'conflict' => 'Dein Kontostand wurde gerade geändert. Bitte erneut laden.',
     _ => 'Die Rangliste ist gerade nicht erreichbar.',
   };
 }
@@ -207,9 +233,13 @@ class CityState {
     required this.currency,
     required this.cities,
     required this.unlockedCities,
+    this.balance = 0,
+    this.earned = 0,
   });
 
   final int currency;
+  final int balance;
+  final int earned;
   final Map<String, CityProgress> cities;
   final List<String> unlockedCities;
 
@@ -229,7 +259,12 @@ class CityState {
       cities.keys.fold(0, (total, cityId) => total + houses(cityId));
 
   factory CityState.fromJson(Map<String, dynamic> json) {
-    if (json['currency'] is! int || json['currency'] < 0) {
+    if (json['currency'] is! int ||
+        json['currency'] < 0 ||
+        json['balance'] is! int ||
+        json['balance'] < 0 ||
+        json['earned'] is! int ||
+        json['earned'] < 0) {
       throw const ApiException('Ungültige Stadtdaten.');
     }
     final rawCities = json['cities'];
@@ -272,6 +307,8 @@ class CityState {
     }
     return CityState(
       currency: json['currency'] as int,
+      balance: json['balance'] as int,
+      earned: json['earned'] as int,
       cities: cities,
       unlockedCities: unlocked,
     );
@@ -546,6 +583,7 @@ class CityClient {
     'gloria' => 'Für dieses besondere Gebäude benötigst du 5 Gloria.',
     'balance' =>
       'Dein Ranglistenstand ist noch nicht aktuell. Bitte warte kurz.',
+    'funds' => 'Dein verfügbares Guthaben reicht dafür nicht aus.',
     'investment' => 'Die Materialmenge ist ungültig.',
     'conflict' => 'Der Kontostand wurde gerade geändert. Bitte erneut laden.',
     _ => 'Der Stadtstand konnte nicht gespeichert werden.',
