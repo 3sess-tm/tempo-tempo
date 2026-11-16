@@ -17,6 +17,8 @@ void main() {
     };
     final city = CityState.fromJson({
       'currency': 55,
+      'balance': 3200,
+      'earned': 8000,
       'unlockedCities': ['rome', 'trier'],
       'cities': {
         'rome': {'progress': 3100, 'sites': rome, 'complete': true},
@@ -26,6 +28,8 @@ void main() {
     });
 
     expect(city.currency, 55);
+    expect(city.balance, 3200);
+    expect(city.earned, 8000);
     expect(city.houses('rome'), 80);
     expect(city.totalHouses, 80);
     expect(city.city('rome')?.complete, isTrue);
@@ -36,6 +40,8 @@ void main() {
     final city = CityState.fromJson({
       'progress': 40,
       'currency': 2,
+      'balance': 100,
+      'earned': 200,
       'sites': {'insula-1': 40},
     });
 

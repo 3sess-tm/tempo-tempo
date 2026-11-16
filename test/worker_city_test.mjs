@@ -21,26 +21,28 @@ class MemoryDatabase {
           first: async () => ({ ...this.account }),
           run: async () => {
             const [
+              newBalance,
               progress,
               currency,
               sites,
               board,
               id,
+              oldBalance,
               oldProgress,
               oldCurrency,
               oldSites,
-              price,
             ] = values;
             if (
               this.account.board !== board ||
               this.account.id !== id ||
+              this.account.balance !== oldBalance ||
               this.account.city_progress !== oldProgress ||
               this.account.city_currency !== oldCurrency ||
-              (this.account.city_sites || '{}') !== oldSites ||
-              this.account.score < progress * price
+              (this.account.city_sites || '{}') !== oldSites
             ) {
               return { meta: { changes: 0 } };
             }
+            this.account.balance = newBalance;
             this.account.city_progress = progress;
             this.account.city_currency = currency;
             this.account.city_sites = sites;
@@ -95,6 +97,7 @@ test('city progress persists and unlocks Trier then Verona', async () => {
     board: 'class-a',
     id: 'Account123',
     score: 100000,
+    balance: 100000,
     city_progress: 0,
     city_currency: 0,
     city_sites: '{}',
@@ -123,6 +126,7 @@ test('city progress persists and unlocks Trier then Verona', async () => {
   assert.deepEqual(world.unlockedCities, ['rome', 'trier']);
   assert.equal(world.cities.rome.complete, true);
   assert.equal(world.currency, 55);
+  assert.equal(world.balance, 87600);
   assert.equal(world.cities.trier.progress, 0);
 
   await buildCity(
@@ -144,6 +148,7 @@ test('city progress persists and unlocks Trier then Verona', async () => {
   assert.equal(world.currency, 110);
   assert.equal(world.cities.rome.progress, 3100);
   assert.equal(world.cities.trier.progress, 3100);
+  assert.equal(world.balance, 75200);
 
   await invest(database, 'verona', 'borgo-1', 20);
   world = await (await request(database, 'GET')).json();
@@ -171,6 +176,7 @@ test('legacy Rome site data is retained in the multi-city response', async () =>
     board: 'class-a',
     id: 'Account123',
     score: 1000,
+    balance: 840,
     city_progress: 40,
     city_currency: 2,
     city_sites: JSON.stringify(legacySites),
@@ -188,4 +194,29 @@ test('legacy Rome site data is retained in the multi-city response', async () =>
   assert.equal(migrated.version, 1);
   assert.equal(migrated.cities.rome.sites['insula-1'], 50);
   assert.equal(migrated.cities.trier.sites['vicus-1'], 0);
+  assert.equal(database.account.balance, 800);
+});
+
+test('city investments cannot spend more than the saved balance', async () => {
+  const database = new MemoryDatabase({
+    board: 'class-a',
+    id: 'Account123',
+    score: 1000,
+    balance: 100,
+    city_progress: 0,
+    city_currency: 0,
+    city_sites: '{}',
+  });
+
+  const response = await request(database, 'POST', {
+    action: 'invest',
+    city: 'rome',
+    site: 'insula-1',
+    materials: 26,
+  });
+
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).error, 'funds');
+  assert.equal(database.account.city_progress, 0);
+  assert.equal(database.account.balance, 100);
 });

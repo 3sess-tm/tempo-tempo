@@ -131,6 +131,8 @@ function cityResponse(account, world) {
   return {
     progress: account.city_progress,
     currency: account.city_currency,
+    balance: account.balance,
+    earned: account.score,
     sites: cities.rome.sites,
     cities,
     unlockedCities: unlockedCities(world)
@@ -147,7 +149,7 @@ async function cityApi(req, env, url) {
     return new Response('Method not allowed', { status: 405 });
 
   const account = await env.DB.prepare(
-    'SELECT score, city_progress, city_currency, city_sites FROM scores WHERE board = ? AND id = ?'
+    'SELECT score, balance, city_progress, city_currency, city_sites FROM scores WHERE board = ? AND id = ?'
   ).bind(board, id).first();
   if (!account) return json({ error: 'account' }, 404);
   const world = cityWorldFor(account);
@@ -193,8 +195,8 @@ async function cityApi(req, env, url) {
 
     const progress = account.city_progress + materials;
     if (progress > 250000) return json({ error: 'investment' }, 400);
-    if (progress * CITY_MATERIAL_PRICE > account.score)
-      return json({ error: 'balance' }, 409);
+    const newBalance = account.balance - materials * CITY_MATERIAL_PRICE;
+    if (newBalance < 0) return json({ error: 'funds' }, 409);
 
     const updatedWorld = {
       ...world,
@@ -204,18 +206,18 @@ async function cityApi(req, env, url) {
       }
     };
     const result = await env.DB.prepare(
-      `UPDATE scores SET city_progress = ?1, city_currency = ?2, city_sites = ?3
-       WHERE board = ?4 AND id = ?5 AND city_progress = ?6 AND city_currency = ?7
-         AND city_sites = ?8 AND score >= ?1 * ?9`
-    ).bind(progress, newCurrency, JSON.stringify(updatedWorld), board, id, account.city_progress,
-      account.city_currency, account.city_sites || '{}', CITY_MATERIAL_PRICE).run();
+      `UPDATE scores SET balance = ?1, city_progress = ?2, city_currency = ?3, city_sites = ?4
+       WHERE board = ?5 AND id = ?6 AND balance = ?7 AND city_progress = ?8
+         AND city_currency = ?9 AND city_sites = ?10`
+    ).bind(newBalance, progress, newCurrency, JSON.stringify(updatedWorld), board, id,
+      account.balance, account.city_progress, account.city_currency, account.city_sites || '{}').run();
     if (!result.meta.changes) return json({ error: 'conflict' }, 409);
   } else {
     return json({ error: 'action' }, 400);
   }
 
   const updated = await env.DB.prepare(
-    'SELECT city_progress, city_currency, city_sites FROM scores WHERE board = ? AND id = ?'
+    'SELECT score, balance, city_progress, city_currency, city_sites FROM scores WHERE board = ? AND id = ?'
   ).bind(board, id).first();
   return json(cityResponse(updated, cityWorldFor(updated)));
 }
@@ -234,32 +236,44 @@ export default {
           .replace(/[\u0000-\u001f<>&"]/g, '').trim().slice(0, 16);
         if (name.length < 2) return json({ error: 'name' }, 400);
         const account = await env.DB.prepare(
-          'SELECT id, name, score FROM scores WHERE board = ? AND lower(name) = lower(?) ORDER BY score DESC, updated DESC LIMIT 1'
+          'SELECT id, name, score, balance, city_progress FROM scores WHERE board = ? AND lower(name) = lower(?) ORDER BY score DESC, updated DESC LIMIT 1'
         ).bind(board, name).first();
         return json({ account: account || null });
       }
       const { results } = await env.DB
-        .prepare('SELECT name, score FROM scores WHERE board = ? ORDER BY score DESC LIMIT 25')
+        .prepare('SELECT name, score, city_progress FROM scores WHERE board = ? ORDER BY score DESC LIMIT 25')
         .bind(board).all();
       return json({ rows: results });
     }
 
     if (req.method === 'POST') {
       let b; try { b = await req.json(); } catch { return json({ error: 'json' }, 400); }
+      if (!b || typeof b !== 'object' || Array.isArray(b))
+        return json({ error: 'invalid' }, 400);
       const board = String(b.board || '').toLowerCase();
       const id = String(b.id || '');
       const name = String(b.name || '').replace(/[\u0000-\u001f<>&"]/g, '').trim().slice(0, 16);
-      const score = Math.floor(Number(b.score));
+      const score = Number(b.score);
+      const hasBalance = Object.hasOwn(b, 'balance');
+      const balance = hasBalance ? Number(b.balance) : null;
       if (!/^[a-z0-9_-]{1,24}$/.test(board) || !/^[A-Za-z0-9]{8,40}$/.test(id) ||
-          name.length < 2 || !Number.isFinite(score) || score < 0 || score > 1e6)
+          name.length < 2 || !Number.isSafeInteger(score) || score < 0 || score > 1e6 ||
+          (hasBalance && (!Number.isSafeInteger(balance) || balance < 0 || balance > score)))
         return json({ error: 'invalid' }, 400);
-      // Erst-Eintrag ok; spätere Sprünge > 500 Asse pro Meldung werden ignoriert (grober Schutz)
-      await env.DB.prepare(
-        `INSERT INTO scores (board, id, name, score, updated) VALUES (?1, ?2, ?3, ?4, ?5)
-         ON CONFLICT (board, id) DO UPDATE SET name = ?3, score = ?4, updated = ?5
-         WHERE ?4 >= scores.score AND ?4 <= scores.score + 500`
-      ).bind(board, id, name, score, Date.now()).run();
-      return json({ ok: true });
+      const result = await env.DB.prepare(
+        `INSERT INTO scores (board, id, name, score, balance, updated)
+         VALUES (?1, ?2, ?3, ?4, COALESCE(?5, ?4), ?6)
+         ON CONFLICT (board, id) DO UPDATE
+         SET name = ?3, score = ?4,
+             balance = CASE WHEN ?5 IS NULL THEN scores.balance ELSE ?5 END,
+             updated = ?6
+         WHERE ?4 >= scores.score AND ?4 <= scores.score + 500
+           AND (?5 IS NULL OR
+             (?5 <= scores.balance + (?4 - scores.score)
+               AND ?5 <= ?4 - scores.city_progress * 4))`
+      ).bind(board, id, name, score, balance, Date.now()).run();
+      if (!result.meta.changes) return json({ error: 'conflict' }, 409);
+      return json({ ok: true, score, balance });
     }
     return new Response('Method not allowed', { status: 405 });
   }
