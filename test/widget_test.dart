@@ -111,6 +111,14 @@ void main() {
     await tester.tap(verona);
     await tester.pump();
     expect(find.text('Augusta Treverorum'), findsWidgets);
+
+    state.updateTab('downloads');
+    await tester.pump();
+    expect(find.text('tempo, tempo für deine Geräte'), findsOneWidget);
+    expect(find.text('Android'), findsOneWidget);
+    expect(find.text('Windows'), findsOneWidget);
+    expect(find.text('iOS Simulator'), findsOneWidget);
+
     final layoutError = tester.takeException();
     expect(layoutError, isNull);
   });

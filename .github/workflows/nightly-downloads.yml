@@ -1,0 +1,212 @@
+name: Build nightly downloads
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-downloads
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.50.0
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Configure Android release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" ]]; then
+            echo "::error::Configure the four Android signing secrets described in README.md."
+            exit 1
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          {
+            printf 'storeFile=../upload-keystore.jks\n'
+            printf 'storePassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+          } > android/key.properties
+
+      - name: Build signed Android APK
+        run: flutter build apk --release --build-number "${{ github.run_number }}"
+
+      - name: Prepare download
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/tempo-tempo-android.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: download-android
+          path: dist/tempo-tempo-android.apk
+          if-no-files-found: error
+          retention-days: 3
+
+  windows:
+    name: Windows portable app
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.50.0
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      - name: Package portable Windows app
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath tempo-tempo-windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: download-windows
+          path: tempo-tempo-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 3
+
+  linux:
+    name: Linux portable app
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libstdc++-12-dev liblzma-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.50.0
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+      - run: flutter build linux --release
+
+      - name: Package portable Linux app
+        run: tar -czf tempo-tempo-linux-x64.tar.gz -C build/linux/x64/release/bundle .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: download-linux
+          path: tempo-tempo-linux-x64.tar.gz
+          if-no-files-found: error
+          retention-days: 3
+
+  macos:
+    name: macOS Apple Silicon app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.50.0
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-macos-desktop
+      - run: flutter pub get
+      - run: flutter build macos --release
+      - run: ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/tempo_tempo.app tempo-tempo-macos-arm64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: download-macos
+          path: tempo-tempo-macos-arm64.zip
+          if-no-files-found: error
+          retention-days: 3
+
+  ios-simulator:
+    name: iOS Simulator app (unsigned)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.50.0
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter build ios --simulator --no-codesign --release
+      - run: ditto -c -k --sequesterRsrc --keepParent build/ios/iphonesimulator/Runner.app tempo-tempo-ios-simulator.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: download-ios-simulator
+          path: tempo-tempo-ios-simulator.zip
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    name: Update nightly release
+    runs-on: ubuntu-latest
+    needs:
+      - android
+      - windows
+      - linux
+      - macos
+      - ios-simulator
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: download-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create or refresh nightly release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          if ! gh release view nightly >/dev/null 2>&1; then
+            gh release create nightly \
+              --prerelease \
+              --title "Nightly build" \
+              --notes "Automated builds from the latest commit on main. These are development downloads, not stable releases." \
+              --target "$GITHUB_SHA"
+          fi
+          git tag --force nightly "$GITHUB_SHA"
+          git push origin refs/tags/nightly --force
+          gh release upload nightly release-assets/* --clobber

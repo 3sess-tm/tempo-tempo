@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'app_services.dart';
 import 'app_state.dart';
@@ -155,6 +156,7 @@ class _TempoHomeState extends State<TempoHome> {
     ('my-verbs', 'Meine Verben', Icons.add_circle_outline),
     ('shop', 'Shop', Icons.storefront),
     ('rome', 'Städte', Icons.map_outlined),
+    ('downloads', 'Downloads', Icons.download_outlined),
     ('leaderboard', 'Rangliste', Icons.leaderboard),
     ('help', 'Hilfe', Icons.help_outline),
   ];
@@ -430,6 +432,7 @@ class _TempoHomeState extends State<TempoHome> {
       'my-verbs' => _CustomVerbsPanel(state: state),
       'shop' => _ShopPanel(state: state),
       'rome' => _RomePanel(state: state),
+      'downloads' => const _DownloadsPanel(),
       'leaderboard' => _LeaderboardPanel(state: state),
       'help' => _HelpPanel(state: state),
       _ => _PracticePanel(state: state),
@@ -2628,6 +2631,202 @@ class _LeaderboardPanelState extends State<_LeaderboardPanel> {
       widget.state.leaderboardStatus = error.message;
       if (mounted) setState(() {});
     }
+  }
+}
+
+class _DownloadsPanel extends StatelessWidget {
+  const _DownloadsPanel();
+
+  static const _releaseUrl =
+      'https://github.com/3sess-tm/tempo-tempo/releases/tag/nightly';
+  static const _downloads = [
+    (
+      name: 'Android',
+      detail: 'APK · direkt auf Android installierbar',
+      file: 'tempo-tempo-android.apk',
+      button: 'APK herunterladen',
+      icon: Icons.android,
+      note: 'Zum Installieren den Download in Android öffnen.',
+    ),
+    (
+      name: 'Windows',
+      detail: '64-Bit · ZIP mit tempo_tempo.exe und Laufzeitdateien',
+      file: 'tempo-tempo-windows-x64.zip',
+      button: 'ZIP herunterladen',
+      icon: Icons.desktop_windows_outlined,
+      note: 'ZIP entpacken und tempo_tempo.exe starten.',
+    ),
+    (
+      name: 'Linux',
+      detail: '64-Bit · TAR.GZ-Paket (GTK 3 erforderlich)',
+      file: 'tempo-tempo-linux-x64.tar.gz',
+      button: 'TAR.GZ herunterladen',
+      icon: Icons.computer_outlined,
+      note: 'GTK 3 installieren, Archiv entpacken und ./tempo_tempo starten.',
+    ),
+    (
+      name: 'macOS',
+      detail: 'Apple Silicon · ZIP mit App',
+      file: 'tempo-tempo-macos-arm64.zip',
+      button: 'App herunterladen',
+      icon: Icons.laptop_mac_outlined,
+      note:
+          'Nicht notarisiert: Beim ersten Start ggf. im Finder per Ctrl-Klick öffnen.',
+    ),
+    (
+      name: 'iOS Simulator',
+      detail: 'Unsigned · nur für den Simulator, nicht für iPhone/iPad',
+      file: 'tempo-tempo-ios-simulator.zip',
+      button: 'Simulator-App herunterladen',
+      icon: Icons.phone_iphone_outlined,
+      note:
+          'Eine installierbare iPhone-App erfordert Apple-Signierung und ist hier nicht enthalten.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'tempo, tempo für deine Geräte',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Nightly-Builds werden bei jedem Update von main neu erstellt. '
+              'Sie enthalten den aktuellen Entwicklungsstand und können sich '
+              'noch ändern.',
+            ),
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 820 ? 2 : 1;
+                const gap = 10.0;
+                final width =
+                    (constraints.maxWidth - gap * (columns - 1)) / columns;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    for (final download in _downloads)
+                      SizedBox(
+                        width: width,
+                        child: _DownloadCard(download: download),
+                      ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            Card(
+              color: scheme.secondaryContainer,
+              child: const Padding(
+                padding: EdgeInsets.all(12),
+                child: Text(
+                  'Android-Hinweis: APK-Updates müssen mit demselben '
+                  'Upload-Keystore signiert sein. Der automatische Build '
+                  'benötigt deshalb einmalig die Android-Signierungs-Secrets '
+                  'des Projekts. iOS-Simulatorpakete lassen sich nicht auf '
+                  'echten iPhones installieren.',
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => _openRelease(context, _releaseUrl),
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Alle Dateien und Versionshinweise'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Future<void> _openRelease(BuildContext context, String url) async {
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Der Download-Link konnte nicht geöffnet werden.'),
+        ),
+      );
+    }
+  }
+}
+
+class _DownloadCard extends StatelessWidget {
+  const _DownloadCard({required this.download});
+
+  final ({
+    String name,
+    String detail,
+    String file,
+    String button,
+    IconData icon,
+    String note,
+  })
+  download;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final url =
+        'https://github.com/3sess-tm/tempo-tempo/releases/download/nightly/${download.file}';
+    return Card(
+      color: scheme.surfaceContainerLow,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(download.icon, color: scheme.primary, size: 28),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    download.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(download.detail),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              onPressed: () => _DownloadsPanel._openRelease(context, url),
+              icon: const Icon(Icons.download),
+              label: Text(download.button),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              download.note,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

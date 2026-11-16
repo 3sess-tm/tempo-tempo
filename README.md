@@ -8,6 +8,40 @@ Wohnviertel und Sonderbauten werden in `city_sites` gespeichert. Bestehende Spie
 npx wrangler d1 execute tempo-lb --remote --file=./migrations/0003_city_sites.sql
 ```
 
+## Downloads und Nightly-Builds
+
+Der Reiter **Downloads** verlinkt auf die Nightly-Veröffentlichung. Bei jedem Push auf `main` baut GitHub Actions die Android-APK, das portable Windows-Paket, das Linux-TAR.GZ, die macOS-App und ein iOS-Simulatorpaket und aktualisiert das GitHub-Release `nightly`. Die Nightly-Dateien sind Entwicklungsstände und keine stabilen Versionen. Das Windows-ZIP enthält die EXE samt Laufzeitdateien; das Linux-Paket muss nach dem Entpacken mit `./tempo_tempo` gestartet werden. Das macOS-Paket ist nicht notarisiert. Das iOS-Paket ist unsigniert und ausschließlich für Simulatoren, nicht für echte iPhones.
+
+Vor dem ersten Nightly-Build muss einmalig ein Android-Upload-Keystore angelegt und als GitHub Actions Secrets hinterlegt werden. Ohne diese Secrets schlägt der Android-Job fehl und die Nightly-Veröffentlichung wird nicht aktualisiert.
+
+1. Mit einem installierten JDK einen Keystore außerhalb des Repositorys erzeugen. Das Passwort selbst festlegen und sicher aufbewahren:
+
+   ```sh
+   mkdir -p "$HOME/.local/share/tempo-tempo"
+   keytool -genkeypair -v \
+     -keystore "$HOME/.local/share/tempo-tempo/tempo-tempo-upload.jks" \
+     -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 \
+     -alias tempo-tempo
+   ```
+
+2. Den Keystore für GitHub kodieren:
+
+   ```sh
+   base64 < "$HOME/.local/share/tempo-tempo/tempo-tempo-upload.jks" \
+     | tr -d '\n' > "$HOME/.local/share/tempo-tempo/tempo-tempo-upload.base64"
+   ```
+
+3. Im GitHub-Repository **Settings → Secrets and variables → Actions → New repository secret** diese vier Repository-Secrets anlegen:
+
+   | Secret | Wert |
+   | --- | --- |
+   | `ANDROID_KEYSTORE_BASE64` | Gesamter Inhalt der Datei `~/.local/share/tempo-tempo/tempo-tempo-upload.base64` |
+   | `ANDROID_KEYSTORE_PASSWORD` | Das beim Erzeugen gewählte Keystore-Passwort |
+   | `ANDROID_KEY_ALIAS` | `tempo-tempo` |
+   | `ANDROID_KEY_PASSWORD` | Das Passwort des Keystore-Schlüssels |
+
+   Keystore und Passwörter niemals in das Git-Repository einchecken oder im Chat teilen. Die `.jks`-Datei sicher und unabhängig sichern: Geht der Keystore verloren, können installierte APKs nicht mit einer späteren Version aktualisiert werden.
+
 ## Lokal entwickeln
 
 Voraussetzung ist das Flutter-SDK (Flutter 3.50.0 / Dart 3.14.0) und Node.js. Die Flutter-Web-App kann separat gestartet werden:
@@ -94,4 +128,4 @@ node --test test/worker_city_test.mjs
 flutter build web --no-wasm-dry-run
 ```
 
-Die lokale Speicherung übernimmt die bestehenden Browser-Schlüssel einschließlich Guthaben, Shop-Besitz, Einstellungen, eigenen Verben, Ranglisten-Konto und Spielstatistik. Rangliste und Städte verwenden weiterhin denselben Worker-Endpunkt und D1-Datensatz; die vorhandenen Rom-Spielstände werden automatisch in das Mehrstädteformat übernommen. Der Web-Build ist das einzige konfigurierte Ziel; Android- und iOS-Toolchains sind nicht Teil dieses Projekts.
+Die lokale Speicherung übernimmt die bestehenden Browser-Schlüssel einschließlich Guthaben, Shop-Besitz, Einstellungen, eigenen Verben, Ranglisten-Konto und Spielstatistik. Rangliste und Städte verwenden weiterhin denselben Worker-Endpunkt und D1-Datensatz; die vorhandenen Rom-Spielstände werden automatisch in das Mehrstädteformat übernommen. Für Android, iOS, Linux, macOS und Windows sind Flutter-Runner vorhanden. Die iOS-Simulator-App ist nicht für die Installation auf echten iPhones geeignet.

@@ -1365,6 +1365,7 @@ class AppState extends ChangeNotifier {
     'my-verbs',
     'shop',
     'rome',
+    'downloads',
     'leaderboard',
     'help',
   }.contains(route);
