@@ -12,3 +12,17 @@ run_worker_first = ["/api/*"]
 binding = "DB"
 database_name = "tempo-lb"
 database_id = "c387b373-af8d-4b5a-83e3-2e5515fcfc88"
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
+
+[observability.issue_detection]
+enabled = false
