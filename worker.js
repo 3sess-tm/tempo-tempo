@@ -225,8 +225,18 @@ async function cityApi(req, env, url) {
 export default {
   async fetch(req, env) {
       const ip = req.headers.get("CF-Connecting-IP") || "0.0.0.0";
-      const { success } = await env.RATE_LIMITER.limit({ key: ip });
-      if (!success) {
+      if (env.RATE_LIMITER) {
+        const { success } = await env.RATE_LIMITER.limit({ key: ip });
+        if (!success) {
+        return new Response("Too many requests", {
+         status: 429,
+        headers: {
+          "Content-Type": "text/plain",
+           "Retry-After": "60"
+        }
+    });
+  }
+}if (!success) {
         return new Response("Too many requests", {
           status: 429,
           headers: { "Content-Type": "text/plain", "Retry-After": "60" }
